@@ -1,0 +1,12 @@
+{
+  "name": "@webster/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "build": "echo \"shared build not initialized yet\"",
+    "lint": "echo \"shared lint not initialized yet\"",
+    "test": "echo \"shared test not initialized yet\""
+  }
+}

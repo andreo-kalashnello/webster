@@ -1,0 +1,60 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: webster
+      MONGO_INITDB_ROOT_PASSWORD: webster
+      MONGO_INITDB_DATABASE: webster
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - mongo_data:/data/db
+
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+      args:
+        APP_PATH: apps/backend
+    restart: unless-stopped
+    env_file:
+      - ./apps/backend/.env
+    depends_on:
+      mongo:
+        condition: service_healthy
+    ports:
+      - "4000:4000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+      args:
+        APP_PATH: apps/frontend
+    restart: unless-stopped
+    env_file:
+      - ./apps/frontend/.env
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "5173:5173"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:5173"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mongo_data:

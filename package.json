@@ -1,0 +1,23 @@
+{
+  "name": "webster",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@9.15.4",
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c cyan,magenta \"pnpm dev:backend\" \"pnpm dev:frontend\"",
+    "dev:frontend": "pnpm --filter @webster/frontend dev",
+    "dev:backend": "pnpm --filter @webster/backend dev",
+    "build": "pnpm --filter @webster/backend build && pnpm --filter @webster/frontend build",
+    "lint": "pnpm --filter @webster/backend lint && pnpm --filter @webster/frontend lint",
+    "test": "pnpm --filter @webster/backend test && pnpm --filter @webster/frontend test",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down -v",
+    "docker:logs": "docker compose logs -f"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
