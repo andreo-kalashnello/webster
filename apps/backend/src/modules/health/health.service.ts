@@ -1,8 +1,8 @@
 import { Injectable } from "@nestjs/common";
 import { InjectConnection } from "@nestjs/mongoose";
-import { Connection } from "mongoose";
+import type { Connection } from "mongoose";
 
-import { SystemStatus } from "./health.model";
+import type { SystemStatus } from "./health.model";
 
 @Injectable()
 export class HealthService {

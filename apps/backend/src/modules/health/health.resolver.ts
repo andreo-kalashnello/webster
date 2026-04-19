@@ -1,7 +1,7 @@
 import { Query, Resolver } from "@nestjs/graphql";
 
-import { HealthService } from "./health.service";
 import { SystemStatus } from "./health.model";
+import { HealthService } from "./health.service";
 
 @Resolver(() => SystemStatus)
 export class HealthResolver {

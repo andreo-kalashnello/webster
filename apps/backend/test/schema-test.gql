@@ -1,0 +1,101 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type UserEntity {
+  id: ID!
+  email: String!
+  firstName: String!
+  lastName: String!
+  avatarUrl: String
+  isEmailVerified: Boolean!
+  isTwoFactorEnabled: Boolean!
+  oauthProvider: OAuthProvider
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+enum OAuthProvider {
+  Google
+  Facebook
+  Github
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type TwoFactorSetupResponse {
+  secret: String!
+  qrCodeUrl: String!
+}
+
+type MessageResponse {
+  message: String!
+}
+
+type Query {
+  me: UserEntity!
+}
+
+type Mutation {
+  updateProfile(input: UpdateProfileDto!): UserEntity!
+  register(input: RegisterDto!): MessageResponse!
+  login(input: LoginDto!): MessageResponse!
+  refreshToken: MessageResponse!
+  oauthLogin(input: OAuthLoginDto!): MessageResponse!
+  verifyEmail(token: String!): MessageResponse!
+  requestPasswordReset(input: RequestPasswordResetDto!): MessageResponse!
+  resetPassword(input: ResetPasswordDto!): MessageResponse!
+  requestMagicLink(input: RequestMagicLinkDto!): MessageResponse!
+  verifyMagicLink(token: String!): MessageResponse!
+  logout: MessageResponse!
+  changePassword(input: ChangePasswordDto!): MessageResponse!
+  generateTwoFactorSecret: TwoFactorSetupResponse!
+  enableTwoFactor(code: String!): MessageResponse!
+  disableTwoFactor(password: String!): MessageResponse!
+}
+
+input UpdateProfileDto {
+  firstName: String
+  lastName: String
+  avatarUrl: String
+}
+
+input RegisterDto {
+  email: String!
+  password: String!
+  firstName: String!
+  lastName: String!
+}
+
+input LoginDto {
+  email: String!
+  password: String!
+  twoFactorCode: String
+}
+
+input OAuthLoginDto {
+  provider: OAuthProvider!
+  code: String!
+  redirectUri: String!
+}
+
+input RequestPasswordResetDto {
+  email: String!
+}
+
+input ResetPasswordDto {
+  token: String!
+  newPassword: String!
+}
+
+input RequestMagicLinkDto {
+  email: String!
+}
+
+input ChangePasswordDto {
+  currentPassword: String!
+  newPassword: String!
+}
