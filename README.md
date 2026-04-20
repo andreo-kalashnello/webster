@@ -223,3 +223,9 @@ modules/
 - Роль 1 (Движок): docs/CHECKLIST_ROLE_1_ENGINE.md
 - Роль 2 (Интерактив и интерфейс): docs/CHECKLIST_ROLE_2_INTERACTION_UI.md
 - Роль 3 (Бэкенд): docs/CHECKLIST_ROLE_3_BACKEND.md
+
+
+
+
+
+Докер компоус снести
