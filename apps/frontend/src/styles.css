@@ -29,6 +29,20 @@ body {
   padding: 24px;
 }
 
+.links {
+  margin-bottom: 20px;
+}
+
+.link {
+  color: #1d4ed8;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
 h1 {
   margin: 0 0 8px;
   font-size: 28px;
@@ -66,4 +80,127 @@ h1 {
   border: 1px solid #fecaca;
   border-radius: 10px;
   padding: 10px;
+}
+
+.engine-page {
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.engine-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.engine-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 20px;
+}
+
+.panel,
+.canvas-shell {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #dbeafe;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+}
+
+.panel {
+  padding: 20px;
+}
+
+.panel h2 {
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+
+.panel ul {
+  margin: 0;
+  padding-left: 18px;
+  color: #334155;
+  line-height: 1.7;
+}
+
+.canvas-shell {
+  overflow: hidden;
+}
+
+.canvas-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(90deg, #eff6ff, #f8fafc);
+  font-weight: 600;
+}
+
+.chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 12px;
+}
+
+.canvas-stage {
+  position: relative;
+  min-height: 520px;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)),
+    radial-gradient(circle at 20% 20%, #dbeafe 0, transparent 30%),
+    radial-gradient(circle at 80% 30%, #bae6fd 0, transparent 22%),
+    #f8fafc;
+}
+
+.sample-object {
+  position: absolute;
+  top: 80px;
+  left: 100px;
+  width: 180px;
+  height: 120px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #1d4ed8, #38bdf8);
+  box-shadow: 0 18px 35px rgba(29, 78, 216, 0.28);
+  transform: rotate(-8deg);
+}
+
+.sample-object-secondary {
+  top: 260px;
+  left: 300px;
+  width: 140px;
+  height: 140px;
+  background: linear-gradient(135deg, #f97316, #fb7185);
+  transform: rotate(14deg);
+}
+
+.canvas-hint {
+  position: absolute;
+  left: 24px;
+  bottom: 20px;
+  margin: 0;
+  color: #475569;
+  font-size: 14px;
+}
+
+@media (max-width: 900px) {
+  .engine-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .engine-header {
+    flex-direction: column;
+  }
 }

@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+import { Link, Route, Routes } from "react-router-dom";
+
+import { CanvasEnginePage } from "./pages/CanvasEnginePage.tsx";
 
 type Status = {
   api: string;
@@ -13,6 +16,15 @@ const defaultStatus: Status = {
 };
 
 export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/canvas-engine" element={<CanvasEnginePage />} />
+    </Routes>
+  );
+}
+
+function HomePage() {
   const [status, setStatus] = useState<Status>(defaultStatus);
   const [error, setError] = useState<string>("");
 
@@ -62,6 +74,12 @@ export default function App() {
       <section className="card">
         <h1>Webster Test Frontend</h1>
         <p className="subtitle">Проверка подключения к backend API и MongoDB</p>
+
+        <div className="links">
+          <Link className="link" to="/canvas-engine">
+            Открыть страницу теста движка
+          </Link>
+        </div>
 
         <div className="row">
           <span>API:</span>
