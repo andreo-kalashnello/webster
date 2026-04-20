@@ -32,7 +32,8 @@
 
 ## 3. Репозиторий и инженерная база
 
-- [ ] Настроить структуру monorepo: apps/frontend, apps/backend, packages/shared.
+- [ ] Настроить структуру monorepo: apps/frontend, apps/backend.
+- [ ] Зафиксировать правило: UI-kit хранится в `apps/frontend/src/shared/ui` (без отдельного workspace-пакета).
 - [ ] Добавить .editorconfig, .gitignore, .nvmrc.
 - [ ] Настроить ESLint + Prettier для frontend/backend.
 - [ ] Настроить lint-staged + husky pre-commit.

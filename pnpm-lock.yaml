@@ -233,8 +233,6 @@ importers:
         specifier: ^7.2.2
         version: 7.3.2(@types/node@24.12.2)(terser@5.46.1)
 
-  packages/shared: {}
-
 packages:
 
   '@angular-devkit/core@19.2.23':

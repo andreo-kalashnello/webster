@@ -126,8 +126,6 @@ apps/
 			config/
 			graphql/
 			modules/
-packages/
-	shared/
 docs/
 ```
 
@@ -177,7 +175,6 @@ modules/
 
 - `@webster/frontend` -> `apps/frontend`
 - `@webster/backend` -> `apps/backend`
-- `@webster/shared` -> `packages/shared`
 
 ## Текущий стек
 
@@ -215,7 +212,7 @@ modules/
 - Разработчик 1: `apps/frontend/src/shared/lib/canvas-engine`, `apps/frontend/src/widgets/editor-canvas`, `apps/frontend/src/features/editor-history`
 - Разработчик 2: `apps/frontend/src/app`, `apps/frontend/src/pages`, `apps/frontend/src/widgets/sidebar`, `apps/frontend/src/features/editor-controls`, `apps/frontend/src/features/auth`
 - Разработчик 3: `apps/backend/src/modules`, `apps/backend/src/graphql`, `apps/backend/src/config`, `apps/backend/src/common`
-- Общие типы и контракты: `packages/shared`
+- Общие UI-компоненты и утилиты: `apps/frontend/src/shared/*` (без отдельного workspace-пакета)
 
 ## Чеклисты
 
@@ -223,9 +220,3 @@ modules/
 - Роль 1 (Движок): docs/CHECKLIST_ROLE_1_ENGINE.md
 - Роль 2 (Интерактив и интерфейс): docs/CHECKLIST_ROLE_2_INTERACTION_UI.md
 - Роль 3 (Бэкенд): docs/CHECKLIST_ROLE_3_BACKEND.md
-
-
-
-
-
-Докер компоус снести
