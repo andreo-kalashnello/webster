@@ -2,23 +2,25 @@
 
 Цель роли: реализовать API, хранение данных редактора и серверную инфраструктуру.
 
+Статус ниже обновлен по фактическому коду в `apps/backend/src` и по тестам (`pnpm --filter @webster/backend test`, `pnpm --filter @webster/backend build`) на 21.04.2026.
+
 ## 1. Базовый каркас backend
 
-- [ ] Инициализировать NestJS проект.
-- [ ] Подключить ConfigModule + env validation.
-- [ ] Подключить MongoDB через Mongoose.
-- [ ] Подключить GraphQLModule (Apollo).
-- [ ] Настроить CORS.
-- [ ] Настроить helmet.
-- [ ] Настроить rate limiting.
-- [ ] Настроить global ValidationPipe.
-- [ ] Настроить global exception filter.
-- [ ] Настроить health/readiness endpoints.
+- [+] Инициализировать NestJS проект.
+- [+] Подключить ConfigModule + env validation.
+- [+] Подключить MongoDB через Mongoose.
+- [+] Подключить GraphQLModule (Apollo).
+- [+] Настроить CORS.
+- [+] Настроить helmet.
+- [+] Настроить rate limiting.
+- [+] Настроить global ValidationPipe.
+- [+] Настроить global exception filter.
+- [+] Настроить health/readiness endpoints.
 
 ## 2. Схема данных MongoDB
 
-- [ ] Создать schema User.
-- [ ] Создать schema RefreshToken.
+- [+] Создать schema User.
+- [+] Создать schema RefreshToken.
 - [ ] Создать schema Project.
 - [ ] Создать schema ProjectVersion.
 - [ ] Создать schema Template.
@@ -29,12 +31,12 @@
 
 ## 3. GraphQL schema и резолверы
 
-- [ ] Описать GraphQL типы доменных сущностей.
-- [ ] Описать Input типы для mutation.
-- [ ] Описать Query для чтения данных.
-- [ ] Описать Mutation для изменения данных.
-- [ ] Реализовать резолверы auth.
-- [ ] Реализовать резолверы profile.
+- [+] Описать GraphQL типы доменных сущностей.
+- [+] Описать Input типы для mutation.
+- [+] Описать Query для чтения данных.
+- [+] Описать Mutation для изменения данных.
+- [+] Реализовать резолверы auth.
+- [+] Реализовать резолверы profile.
 - [ ] Реализовать резолверы projects.
 - [ ] Реализовать резолверы templates.
 - [ ] Реализовать резолверы versions.
@@ -42,16 +44,24 @@
 
 ## 4. Auth и безопасность
 
-- [ ] Реализовать register mutation.
-- [ ] Реализовать login mutation.
-- [ ] Реализовать refreshToken mutation.
-- [ ] Реализовать logout mutation.
-- [ ] Реализовать verifyEmail mutation.
-- [ ] Реализовать me query.
-- [ ] Реализовать changePassword mutation.
-- [ ] Реализовать JWT guard для защищенных резолверов.
-- [ ] Реализовать ротацию/инвалидацию refresh токенов.
-- [ ] Реализовать throttle на auth мутациях.
+- [+] Реализовать register mutation.
+- [+] Реализовать login mutation.
+- [+] Реализовать refreshToken mutation.
+- [+] Реализовать logout mutation.
+- [+] Реализовать verifyEmail mutation.
+- [+] Реализовать me query.
+- [+] Реализовать changePassword mutation.
+- [+] Реализовать JWT guard для защищенных резолверов.
+- [+] Реализовать ротацию/инвалидацию refresh токенов.
+- [+] Реализовать throttle на auth мутациях.
+
+### Дополнительно уже реализовано в auth (вне базовых пунктов)
+
+- [+] `requestPasswordReset` и `resetPassword`.
+- [+] `requestMagicLink` и `verifyMagicLink`.
+- [+] `oauthLogin` (Google/Facebook/GitHub).
+- [+] 2FA поток: `generateTwoFactorSecret`, `enableTwoFactor`, `disableTwoFactor`.
+- [+] HttpOnly cookie flow для `access_token`/`refresh_token`.
 
 ## 5. Projects API
 
@@ -97,22 +107,22 @@
 
 - [ ] Добавить structured logging.
 - [ ] Добавить request id в логи.
-- [ ] Добавить логирование GraphQL ошибок.
+- [+] Добавить логирование GraphQL ошибок.
 - [ ] Добавить метрики latency по резолверам.
 - [ ] Добавить метрики ошибок 4xx/5xx.
 - [ ] Добавить cron очистки orphan files.
 
 ## 10. Тесты роли
 
-- [ ] Unit-тесты auth service.
+- [+] Unit-тесты auth service.
 - [ ] Unit-тесты projects service.
 - [ ] Unit-тесты templates service.
 - [ ] Unit-тесты versions service.
-- [ ] Integration-тесты GraphQL auth.
+- [+] Integration-тесты GraphQL auth.
 - [ ] Integration-тесты GraphQL projects.
 - [ ] Integration-тесты GraphQL templates/versions.
 - [ ] Integration-тесты upload/export/share.
-- [ ] Негативные тесты валидации и авторизации.
+- [+] Негативные тесты валидации и авторизации.
 
 ## 11. Done-критерии роли
 
@@ -121,3 +131,33 @@
 - [ ] Auth и ownership работают корректно.
 - [ ] Критические backend сценарии покрыты тестами.
 - [ ] API готов к интеграции с frontend без блокеров.
+
+## 12. Некст задания на 2 дня (backend)
+
+### День 1: Projects foundation
+
+1. Реализовать `Project` schema в `modules/projects/models` с полями: `ownerId`, `title`, `sceneState`, `thumbnailUrl`, `isDeleted`, `deletedAt`, `createdAt`, `updatedAt`.
+2. Добавить индексы для `ownerId`, `updatedAt`, а также compound индекс для списка проектов пользователя.
+3. Реализовать `ProjectsModule` + `ProjectsService` + `ProjectsResolver` с операциями `createProject`, `updateProject`, `deleteProject`, `projectById`, `projects` (с pagination).
+4. Вшить ownership-проверки в сервис (доступ только владельцу).
+5. Подключить модуль в `AppModule` и убедиться, что операции попали в auto-generated GraphQL schema.
+6. Добавить unit-тесты `projects.service` на create/update/delete/list + unauthorized access.
+
+Проверка дня 1:
+- `pnpm --filter @webster/backend build` проходит.
+- `pnpm --filter @webster/backend test` проходит.
+- В GraphQL доступны `createProject`, `updateProject`, `deleteProject`, `projectById`, `projects`.
+
+### День 2: Versioning + autosave
+
+1. Реализовать `ProjectVersion` schema в `modules/projects/models` с индексами по `projectId` и `createdAt`.
+2. Реализовать операции `createVersion`, `versions`, `restoreVersion`.
+3. Добавить `autosaveProject` mutation с валидацией размера payload и ownership-проверкой.
+4. Реализовать лимит версий на проект (например, хранить последние N) и политику удаления старых версий.
+5. Добавить integration/e2e тесты GraphQL на projects + versions сценарии.
+6. Для auth-мутаций добавить отдельные `@Throttle()` профили (жестче для `login/register/refreshToken`).
+
+Проверка дня 2:
+- В GraphQL доступны `autosaveProject`, `createVersion`, `versions`, `restoreVersion`.
+- Версии ограничиваются по политике и старые удаляются.
+- e2e-тесты покрывают happy-path и негативные кейсы (чужой проект, невалидный payload, отсутствующий проект).
