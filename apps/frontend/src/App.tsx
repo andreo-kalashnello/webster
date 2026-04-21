@@ -69,34 +69,44 @@ function HomePage() {
     };
   }, []);
 
-  return (
-    <main className="page">
-      <section className="card">
-        <h1>Webster Test Frontend</h1>
-        <p className="subtitle">Проверка подключения к backend API и MongoDB</p>
+  const apiStatusClass = status.api === "ok" ? "text-emerald-700" : "text-rose-700";
+  const dbStatusClass = status.db === "connected" ? "text-emerald-700" : "text-rose-700";
 
-        <div className="links">
-          <Link className="link" to="/canvas-engine">
+  return (
+    <main className="grid min-h-screen place-items-center bg-[radial-gradient(circle_at_20%_20%,#e0f2fe,#f8fafc_60%)] px-6 py-8 font-sans">
+      <section className="w-full max-w-xl rounded-2xl border border-sky-100 bg-white/95 p-6 shadow-[0_20px_40px_rgba(15,23,42,0.08)] backdrop-blur-sm">
+        <h1 className="mb-2 text-3xl font-semibold tracking-tight text-slate-900">Webster Test Frontend</h1>
+        <p className="mb-5 text-sm text-slate-600">Проверка подключения к backend API и MongoDB</p>
+
+        <div className="mb-5">
+          <Link
+            className="font-semibold text-blue-700 underline-offset-4 transition-colors hover:text-blue-800 hover:underline"
+            to="/canvas-engine"
+          >
             Открыть страницу теста движка
           </Link>
         </div>
 
-        <div className="row">
+        <div className="flex items-center justify-between border-b border-slate-100 py-2.5 text-sm">
           <span>API:</span>
-          <strong className={status.api === "ok" ? "ok" : "bad"}>{status.api}</strong>
+          <strong className={`font-semibold ${apiStatusClass}`}>{status.api}</strong>
         </div>
 
-        <div className="row">
+        <div className="flex items-center justify-between border-b border-slate-100 py-2.5 text-sm">
           <span>DB:</span>
-          <strong className={status.db === "connected" ? "ok" : "bad"}>{status.db}</strong>
+          <strong className={`font-semibold ${dbStatusClass}`}>{status.db}</strong>
         </div>
 
-        <div className="row">
+        <div className="flex items-center justify-between py-2.5 text-sm">
           <span>Updated:</span>
-          <strong>{status.timestamp}</strong>
+          <strong className="font-semibold text-slate-900">{status.timestamp}</strong>
         </div>
 
-        {error ? <p className="error">Ошибка: {error}</p> : null}
+        {error ? (
+          <p className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+            Ошибка: {error}
+          </p>
+        ) : null}
       </section>
     </main>
   );

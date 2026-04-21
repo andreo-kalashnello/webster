@@ -12,11 +12,11 @@
 
 ## 1. Базовая архитектура движка
 
-- [ ] Создать модульную структуру: core, renderer, scene, tools, commands, utils.
-- [ ] Определить базовые типы: Point, Rect, Transform, NodeId, LayerId.
-- [ ] Спроектировать базовый интерфейс объекта сцены (SceneNode).
-- [ ] Разделить runtime-состояние и сериализуемое состояние.
-- [ ] Добавить единый event bus для движка.
+- [x] Создать модульную структуру: core, renderer, scene, tools, commands, utils.
+- [x] Определить базовые типы: Point, Rect, Transform, NodeId, LayerId.
+- [x] Спроектировать базовый интерфейс объекта сцены (SceneNode).
+- [x] Разделить runtime-состояние и сериализуемое состояние.
+- [x] Добавить единый event bus для движка.
 
 ## 2. Renderer и canvas lifecycle
 
@@ -107,3 +107,16 @@
 - [ ] Undo/redo стабильно работает на длинных сессиях.
 - [ ] JSON формат стабилен и совместим с backend.
 - [ ] Производительность приемлема для MVP сцен.
+
+
+
+
+
+20.04
+1. Перенес ui слой в shared 
+2. Накидал структуру. что сделал: сделал структуру core, scene, renderer, tools, commands, utils и единый экспорт.
+3. Накидал типы на Point, Rect, Transform, NodeId, LayerId. Что сделал: описал основные типы геометрии и идентификаторов, плюс identity-transform.
+4. Добавлен контракт SceneNode. Что сделал: зафиксировал минимальный контракт объекта сцены: id, layerId, type, bounds, transform, style, data. Как это работает: любой объект на canvas должен укладываться в общий контракт. Это основа для рендера, выделения, сериализации, undo/redo.
+5. Разделено состояние на serializable и runtime. Что сделал: сделал два слоя состояния. Как это работает: SerializableSceneState: то, что можно безопасно сохранять в JSON. RuntimeSceneState: временные вещи, нужные только во время работы (selectedNodeIds, hoveredNodeId, activeTool, dirtyNodeIds).Почему это важно: ты не хочешь случайно сохранять временные флаги UI в базу. Что проверять: runtime-поля не попадают в serializable-модель.
+6. Добавлен typed event bus. Что сделал: сделал EngineEventMap и EngineEventBus с типобезопасными on/emit. Как это работает: события централизованы. Если событие называется tool:changed, то payload всегда строго правильного типа. Это сильно помогает не ловить баги “передал не то”.
+7. Добавлен минимальный Engine API и интеграция smoke-теста. Что сделал: сделал createCanvasEngine и API методы getSerializableState, getRuntimeSnapshot, replaceScene, setSelection, setTool; подключил это к CanvasEnginePage. Как это работает: страница выступает как технический стенд. Кнопки дергают API движка, а debug-панель показывает, что реально изменилось.
