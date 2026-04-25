@@ -13,6 +13,7 @@ export interface SceneNodeData {
   text?: string;
   src?: string;
   points?: Point[];
+  groupId?: string;
 }
 
 export interface SceneNode {

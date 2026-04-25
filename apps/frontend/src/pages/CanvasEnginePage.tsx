@@ -41,11 +41,9 @@ type DragState =
   | {
       mode: "node";
       pointerId: number;
-      nodeId: NodeId;
+      nodeIds: NodeId[];
       startWorld: Point;
-      initialX: number;
-      initialY: number;
-      originalPoints?: Point[];
+      initialPositions: Record<NodeId, { x: number; y: number; originalPoints?: Point[] }>;
     }
   | {
       mode: "pan";
@@ -243,6 +241,23 @@ export function CanvasEnginePage() {
           }
         });
         engine.setSelection([]);
+        return;
+      }
+
+      if (hasModifier && !event.shiftKey && event.key.toLowerCase() === "g" && hasSelection) {
+        event.preventDefault();
+        const groupId = `group-${Date.now()}`;
+        engine.batchUpdate(({ updateNode }) => {
+          for (const nodeId of selectedNodeIds) {
+            updateNode(nodeId, (prevNode) => ({
+              ...prevNode,
+              data: {
+                ...(prevNode.data ?? {}),
+                groupId,
+              },
+            }));
+          }
+        });
         return;
       }
 
@@ -456,7 +471,9 @@ export function CanvasEnginePage() {
     const hitNodeId = pickTopNodeAtPoint(scene, worldPoint);
 
     if (!hitNodeId) {
-      engine.setSelection([]);
+      if (!event.shiftKey) {
+        engine.setSelection([]);
+      }
       const camera = renderer.getCamera();
       dragStateRef.current = {
         mode: "pan",
@@ -469,21 +486,50 @@ export function CanvasEnginePage() {
       return;
     }
 
-    engine.setSelection([hitNodeId]);
+    const currentSelection = engine.getRuntimeSnapshot().selectedNodeIds;
+    let nextSelection = currentSelection;
+    const hitGroupedIds = getGroupedNodeIds(scene, [hitNodeId]);
 
-    const hitNode = scene.nodes[hitNodeId];
-    if (!hitNode) {
-      return;
+    if (event.shiftKey) {
+      const isAlreadySelected = currentSelection.includes(hitNodeId);
+      if (isAlreadySelected) {
+        nextSelection = currentSelection.filter((id) => !hitGroupedIds.includes(id));
+        engine.setSelection(nextSelection);
+        return;
+      } else {
+        nextSelection = Array.from(new Set([...currentSelection, ...hitGroupedIds]));
+        engine.setSelection(nextSelection);
+      }
+    } else {
+      if (!currentSelection.includes(hitNodeId)) {
+        nextSelection = hitGroupedIds;
+        engine.setSelection(nextSelection);
+      } else {
+        nextSelection = getGroupedNodeIds(scene, currentSelection);
+        if (nextSelection.length !== currentSelection.length) {
+          engine.setSelection(nextSelection);
+        }
+      }
+    }
+
+    const initialPositions: Record<NodeId, { x: number; y: number; originalPoints?: Point[] }> = {};
+    for (const id of nextSelection) {
+      const node = scene.nodes[id];
+      if (node) {
+        initialPositions[id] = {
+          x: node.bounds.x,
+          y: node.bounds.y,
+          originalPoints: node.data?.points ? node.data.points.map((pointData) => ({ ...pointData })) : undefined,
+        };
+      }
     }
 
     dragStateRef.current = {
       mode: "node",
       pointerId: event.pointerId,
-      nodeId: hitNodeId,
+      nodeIds: nextSelection,
       startWorld: worldPoint,
-      initialX: hitNode.bounds.x,
-      initialY: hitNode.bounds.y,
-      originalPoints: hitNode.data?.points ? hitNode.data.points.map((pointData) => ({ ...pointData })) : undefined,
+      initialPositions,
     };
 
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -572,29 +618,38 @@ export function CanvasEnginePage() {
       return;
     }
 
-    const deltaX = worldPoint.x - dragState.startWorld.x;
-    const deltaY = worldPoint.y - dragState.startWorld.y;
+    if (dragState.mode === "node") {
+      const deltaX = worldPoint.x - dragState.startWorld.x;
+      const deltaY = worldPoint.y - dragState.startWorld.y;
 
-    const shiftedPoints = dragState.originalPoints
-      ? shiftPoints(dragState.originalPoints, deltaX, deltaY)
-      : undefined;
+      engine.batchUpdate(({ updateNode }) => {
+        for (const nodeId of dragState.nodeIds) {
+          const initial = dragState.initialPositions[nodeId];
+          if (!initial) continue;
 
-    engine.updateNode(dragState.nodeId, (prevNode) => ({
-      ...prevNode,
-      bounds: shiftedPoints
-        ? buildPointsBounds(shiftedPoints)
-        : {
-            ...prevNode.bounds,
-            x: dragState.initialX + deltaX,
-            y: dragState.initialY + deltaY,
-          },
-      data: shiftedPoints
-        ? {
-            ...(prevNode.data ?? {}),
-            points: shiftedPoints,
-          }
-        : prevNode.data,
-    }));
+          const shiftedPoints = initial.originalPoints
+            ? shiftPoints(initial.originalPoints, deltaX, deltaY)
+            : undefined;
+
+          updateNode(nodeId, (prevNode) => ({
+            ...prevNode,
+            bounds: shiftedPoints
+              ? buildPointsBounds(shiftedPoints)
+              : {
+                  ...prevNode.bounds,
+                  x: initial.x + deltaX,
+                  y: initial.y + deltaY,
+                },
+            data: shiftedPoints
+              ? {
+                  ...(prevNode.data ?? {}),
+                  points: shiftedPoints,
+                }
+              : prevNode.data,
+          }));
+        }
+      });
+    }
   }
 
   function handleCanvasPointerEnd(event: React.PointerEvent<HTMLCanvasElement>): void {
@@ -732,7 +787,7 @@ export function CanvasEnginePage() {
 
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-slate-100 font-sans">
-      <div className="absolute inset-0 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] bg-size-[16px_16px]" />
+      <div className="absolute inset-0 bg-[radial-gradient(#cbd5e1_2px,transparent_2px)] bg-size-[16px_16px]" />
 
       <canvas
         ref={canvasRef}
@@ -900,6 +955,31 @@ function distance(first: Point, second: Point): number {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
+function getGroupedNodeIds(scene: SerializableSceneState, nodeIds: NodeId[]): NodeId[] {
+  const result = new Set<NodeId>();
+  const groupIds = new Set<string>();
+
+  for (const id of nodeIds) {
+    const node = scene.nodes[id];
+    if (!node) continue;
+    result.add(id);
+    if (node.data?.groupId) {
+      groupIds.add(node.data.groupId);
+    }
+  }
+
+  if (groupIds.size > 0) {
+    for (const id of scene.nodeOrder) {
+      const node = scene.nodes[id];
+      if (node?.data?.groupId && groupIds.has(node.data.groupId)) {
+        result.add(id);
+      }
+    }
+  }
+
+  return Array.from(result);
+}
+
 function getCanvasPoint(event: Pick<React.PointerEvent<HTMLCanvasElement>, "clientX" | "clientY" | "currentTarget"> | Pick<React.MouseEvent<HTMLCanvasElement>, "clientX" | "clientY" | "currentTarget">): Point {
   return getCanvasPointFromClient(event.currentTarget, event.clientX, event.clientY);
 }
@@ -1012,3 +1092,4 @@ function createRendererDemoScene(version = 1): SerializableSceneState {
     },
   };
 }
+
