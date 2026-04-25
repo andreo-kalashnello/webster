@@ -11,8 +11,18 @@ export {
   type Transform,
 } from "./core/types";
 export { type Command } from "./commands";
-export { type RenderMode, type RenderStats } from "./renderer";
+export { CanvasRenderer, type RenderMode, type RenderStats, type RendererViewport } from "./renderer";
 export { type SceneNode, type SceneNodeData, type SceneNodeStyle, type SceneNodeType } from "./scene/scene-node";
+export {
+  SceneModel,
+  createImmutableSceneSnapshot,
+  createSceneModel,
+  normalizeSerializableSceneState,
+  type SceneBatchOperations,
+  type SceneModelSnapshot,
+  type SceneNodeUpdatePatch,
+  type SceneNodeUpdater,
+} from "./scene/scene-model";
 export {
   createEmptySerializableSceneState,
   createRuntimeSceneState,

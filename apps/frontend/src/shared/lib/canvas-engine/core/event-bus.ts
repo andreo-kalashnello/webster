@@ -1,6 +1,12 @@
 import type { NodeId, ToolName } from "./types";
 
-export type SceneChangeReason = "init" | "replace-scene" | "node-update";
+export type SceneChangeReason =
+  | "init"
+  | "replace-scene"
+  | "node-add"
+  | "node-remove"
+  | "node-update"
+  | "batch-update";
 
 export type EngineEventMap = {
   "engine:ready": { timestamp: string };

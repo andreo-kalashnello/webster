@@ -1,5 +1,6 @@
 import { DEFAULT_LAYER_ID, type LayerId, type NodeId, type ToolName } from "../core/types";
 import type { SceneNode } from "./scene-node";
+import { createSceneModel, normalizeSerializableSceneState, type SceneModel } from "./scene-model";
 
 export interface SerializableSceneState {
   version: number;
@@ -9,7 +10,7 @@ export interface SerializableSceneState {
 }
 
 export interface RuntimeSceneState {
-  serializable: SerializableSceneState;
+  sceneModel: SceneModel;
   selectedNodeIds: Set<NodeId>;
   hoveredNodeId: NodeId | null;
   activeTool: ToolName;
@@ -29,7 +30,7 @@ export function createRuntimeSceneState(
   serializable: SerializableSceneState = createEmptySerializableSceneState(),
 ): RuntimeSceneState {
   return {
-    serializable,
+    sceneModel: createSceneModel(normalizeSerializableSceneState(serializable)),
     selectedNodeIds: new Set<NodeId>(),
     hoveredNodeId: null,
     activeTool: "select",

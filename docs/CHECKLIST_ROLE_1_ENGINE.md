@@ -20,23 +20,23 @@
 
 ## 2. Renderer и canvas lifecycle
 
-- [ ] Инициализировать Canvas 2D context с учетом devicePixelRatio.
-- [ ] Реализовать resize обработчик без потери качества.
-- [ ] Реализовать полный redraw всего кадра.
-- [ ] Реализовать фазу очистки кадра.
-- [ ] Реализовать сортировку по z-index перед отрисовкой.
-- [ ] Реализовать отрисовку выделения поверх контента.
-- [ ] Реализовать dirty-rect оптимизацию.
-- [ ] Добавить fallback на полный redraw при сложных изменениях.
+- [x] Инициализировать Canvas 2D context с учетом devicePixelRatio.
+- [x] Реализовать resize обработчик без потери качества.
+- [x] Реализовать полный redraw всего кадра.
+- [x] Реализовать фазу очистки кадра.
+- [x] Реализовать сортировку по z-index перед отрисовкой.
+- [x] Реализовать отрисовку выделения поверх контента.
+- [x] Реализовать dirty-rect оптимизацию.
+- [x] Добавить fallback на полный redraw при сложных изменениях.
 
 ## 3. Модель сцены
 
-- [ ] Реализовать хранение nodes в Map по id.
-- [ ] Реализовать хранение порядка слоев отдельным массивом.
-- [ ] Реализовать операции add/remove/update node.
-- [ ] Реализовать batch update транзакции сцены.
-- [ ] Реализовать immutable snapshot для undo/redo.
-- [ ] Реализовать нормализацию состояния перед сохранением.
+- [x] Реализовать хранение nodes в Map по id.
+- [x] Реализовать хранение порядка слоев отдельным массивом.
+- [x] Реализовать операции add/remove/update node.
+- [x] Реализовать batch update транзакции сцены.
+- [x] Реализовать immutable snapshot для undo/redo.
+- [x] Реализовать нормализацию состояния перед сохранением.
 
 ## 4. Геометрия и трансформации
 
@@ -117,3 +117,48 @@
 5. Разделено состояние на serializable и runtime. Что сделал: сделал два слоя состояния. Как это работает: SerializableSceneState: то, что можно безопасно сохранять в JSON. RuntimeSceneState: временные вещи, нужные только во время работы (selectedNodeIds, hoveredNodeId, activeTool, dirtyNodeIds).Почему это важно: ты не хочешь случайно сохранять временные флаги UI в базу. Что проверять: runtime-поля не попадают в serializable-модель.
 6. Добавлен typed event bus. Что сделал: сделал EngineEventMap и EngineEventBus с типобезопасными on/emit. Как это работает: события централизованы. Если событие называется tool:changed, то payload всегда строго правильного типа. Это сильно помогает не ловить баги “передал не то”.
 7. Добавлен минимальный Engine API и интеграция smoke-теста. Что сделал: сделал createCanvasEngine и API методы getSerializableState, getRuntimeSnapshot, replaceScene, setSelection, setTool; подключил это к CanvasEnginePage. Как это работает: страница выступает как технический стенд. Кнопки дергают API движка, а debug-панель показывает, что реально изменилось.
+
+
+25.04
+Добавлен полноценный рендерер Canvas с lifecycle в index.ts:28
+Инициализация Canvas 2D с учетом devicePixelRatio и корректного масштаба в index.ts:139
+Resize без размытия через ResizeObserver + пересчет внутреннего буфера canvas в index.ts:55
+Полный redraw и clear phase (очистка + заливка фона + отрисовка нод) в index.ts:87
+Сортировка порядка отрисовки по nodeOrder (как z-порядок) в index.ts:342
+Overlay выделения поверх контента в index.ts:309
+Dirty-rect оптимизация (локальный redraw области) в index.ts:167
+Fallback на full-redraw при сложных/неопределенных изменениях в index.ts:97
+Подключение рендерера на страницу, добавлен реальный canvas, демо-сцена и live-метрики рендера в CanvasEnginePage.tsx:30
+Экспорт CanvasRenderer через barrel в index.ts:14
+
+25.04 (этап 3)
+Добавлена SceneModel в scene/scene-model.ts с внутренним хранением nodes в Map<NodeId, SceneNode>
+Сохранен отдельный порядок слоев и порядок нод (layerOrder/nodeOrder) с нормализацией
+Добавлены операции addNode/removeNode/updateNode на уровне модели и API движка
+Добавлена batchUpdate транзакция сцены с единым scene:changed:batch-update
+Добавлен immutable snapshot (freeze) для безопасной базы под undo/redo
+Добавлена normalizeSerializableSceneState перед выдачей serializable состояния
+Расширен API createCanvasEngine: addNode, removeNode, updateNode, batchUpdate
+В CanvasEnginePage добавлен smoke test этапа 3: Add/Update/Remove/Batch + nodeCount/layerCount
+
+25.04 (интерактив canvas без кнопок)
+Убрана техническая кнопочная панель действий, управление перенесено в сам canvas
+Добавлено прямое взаимодействие: click-select top-most, drag-move, double click-add node
+Добавлены горячие клавиши: Delete/Backspace remove, стрелки move, Esc clear selection, R reset scene
+Из-за конфликта браузера с Ctrl/Cmd + D добавлены стабильные дублирующие шорткаты: D и Ctrl/Cmd + Shift + D
+Добавлена навигация колесом: wheel вертикальный pan, Shift + wheel горизонтальный pan
+Добавлен zoom сцены через Ctrl/Cmd + wheel относительно позиции курсора
+
+25.04 (изоляция canvas от скролла браузера)
+Wheel/zoom обработка переведена на native non-passive listener только на canvas
+Добавлена защита от scroll chaining: пока указатель в canvas, колесо работает только с canvas
+Снаружи canvas колесо и зум остаются поведением браузера
+Добавлен toolbar tools на странице (включая Pencil) через setTool для более понятного ручного теста
+
+25.04 (toolbar как в figma + реальные инструменты)
+Тулбар инструментов перенесен вниз preview-зоны в формате icon-only панели
+Использованы иконки из lucide-react для Select/Pencil/Text/Rect/Triangle/Arrow/Image
+Pencil теперь реально рисует path по точкам курсора при зажатой ЛКМ
+Text теперь реально создает текстовую ноду через ввод текста по клику
+Pan canvas реализован перетаскиванием пустой области ЛКМ (как hand navigation)
+Wheel pan и Ctrl/Cmd + wheel zoom переведены на camera viewport без изменения bounds объектов
