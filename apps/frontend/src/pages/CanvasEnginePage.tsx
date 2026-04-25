@@ -176,11 +176,6 @@ export function CanvasEnginePage() {
 
   useEffect(() => {
     const stopTool = engine.events.on("tool:changed", ({ tool }) => {
-      setDebug((prev) => ({
-        ...prev,
-        activeTool: tool,
-        lastEvent: `tool:changed:${tool}`,
-      }));
     });
 
     const stopSelection = engine.events.on("selection:changed", ({ selectedNodeIds }) => {
@@ -205,7 +200,6 @@ export function CanvasEnginePage() {
     return () => {
       stopTool();
       stopSelection();
-      stopScene();
     };
   }, [engine]);
 
