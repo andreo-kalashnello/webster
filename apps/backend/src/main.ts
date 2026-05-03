@@ -20,7 +20,13 @@ async function bootstrap() {
 
   app.use(cookieParser());
 
-  app.use(mongoSanitize());
+  // express-mongo-sanitize@2.2.0 hardcodes req.query mutation, which Express 5 disallows.
+  // Use the sanitize() function directly on body/params to avoid touching the read-only getter.
+  app.use((req: import("express").Request, _res: import("express").Response, next: import("express").NextFunction) => {
+    if (req.body) req.body = mongoSanitize.sanitize(req.body as Record<string, unknown>);
+    if (req.params) req.params = mongoSanitize.sanitize(req.params as Record<string, unknown>) as Record<string, string>;
+    next();
+  });
 
   const allowedOrigins = config.get<string>("FRONTEND_URL")!;
   app.enableCors({

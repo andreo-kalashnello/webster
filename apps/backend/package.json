@@ -20,6 +20,7 @@
     "cookie-parser": "^1.4.7",
     "express-mongo-sanitize": "^2.2.0",
     "graphql": "^16.12.0",
+    "graphql-type-json": "^0.3.2",
     "graphql-upload": "^16.0.2",
     "helmet": "^8.1.0",
     "mongoose": "^8.20.1",
@@ -39,7 +40,7 @@
     "lint": "pnpx @biomejs/biome lint --write",
     "format": "pnpx @biomejs/biome check --write",
     "test": "jest --passWithNoTests",
-    "test:e2e": "jest --config jest-e2e.config.js --passWithNoTests"
+    "test:e2e": "jest --config jest-e2e.config.js --passWithNoTests --runInBand --forceExit"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.12",

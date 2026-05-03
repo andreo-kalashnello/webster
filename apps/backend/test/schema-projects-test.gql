@@ -35,12 +35,6 @@ type MessageResponse {
   message: String!
 }
 
-type SystemStatus {
-  api: String!
-  db: String!
-  timestamp: String!
-}
-
 type ProjectEntity {
   id: ID!
   userId: ID!
@@ -66,7 +60,6 @@ type ProjectsPageResponse {
 }
 
 type Query {
-  systemStatus: SystemStatus!
   me: UserEntity!
   projects(pagination: ProjectsPaginationDto): ProjectsPageResponse!
   project(id: ID!): ProjectEntity!

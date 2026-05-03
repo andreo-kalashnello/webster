@@ -13,6 +13,7 @@ import { MailModule } from "./infra/mail/mail.module";
 import { OAuthModule } from "./infra/oauth/oauth.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { HealthModule } from "./modules/health/health.module";
+import { ProjectsModule } from "./modules/projects/projects.module";
 import { UsersModule } from "./modules/users/users.module";
 
 @Module({
@@ -49,6 +50,7 @@ import { UsersModule } from "./modules/users/users.module";
     HealthModule,
     UsersModule,
     AuthModule,
+    ProjectsModule,
   ],
   providers: [
     {
