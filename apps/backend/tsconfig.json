@@ -15,7 +15,7 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "moduleResolution": "node16",
-    "types": ["jest", "node"]
+    "types": ["jest", "node", "multer"]
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"]

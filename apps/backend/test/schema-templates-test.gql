@@ -35,13 +35,17 @@ type MessageResponse {
   message: String!
 }
 
-type ProjectVersionEntity {
+type TemplateEntity {
   id: ID!
-  projectId: ID!
-  userId: ID!
-  label: String
+  userId: ID
+  title: String!
+  thumbnailUrl: String
+  width: Int!
+  height: Int!
   content: JSON
+  isPublic: Boolean!
   createdAt: DateTime!
+  updatedAt: DateTime!
 }
 
 """
@@ -61,23 +65,10 @@ type ProjectEntity {
   updatedAt: DateTime!
 }
 
-type ProjectsPageResponse {
-  items: [ProjectEntity!]!
-  total: Int!
-  page: Int!
-  totalPages: Int!
-}
-
 type Query {
   me: UserEntity!
-  projects(pagination: ProjectsPaginationDto): ProjectsPageResponse!
-  project(id: ID!): ProjectEntity!
-  versions(projectId: ID!): [ProjectVersionEntity!]!
-}
-
-input ProjectsPaginationDto {
-  page: Int = 1
-  limit: Int = 20
+  baseTemplates: [TemplateEntity!]!
+  userTemplates: [TemplateEntity!]!
 }
 
 type Mutation {
@@ -96,13 +87,10 @@ type Mutation {
   generateTwoFactorSecret: TwoFactorSetupResponse!
   enableTwoFactor(code: String!): MessageResponse!
   disableTwoFactor(password: String!): MessageResponse!
-  createProject(input: CreateProjectDto!): ProjectEntity!
-  updateProject(id: ID!, input: UpdateProjectDto!): ProjectEntity!
-  autosaveProject(id: ID!, content: JSON!, thumbnailUrl: String): ProjectEntity!
-  deleteProject(id: ID!): Boolean!
-  cloneProject(id: ID!): ProjectEntity!
-  createVersion(projectId: ID!, label: String): ProjectVersionEntity!
-  restoreVersion(projectId: ID!, versionId: ID!): ProjectEntity!
+  createUserTemplate(input: CreateUserTemplateDto!): TemplateEntity!
+  updateUserTemplate(id: ID!, input: UpdateUserTemplateDto!): TemplateEntity!
+  deleteUserTemplate(id: ID!): Boolean!
+  createProjectFromTemplate(templateId: ID!, title: String): ProjectEntity!
 }
 
 input UpdateProfileDto {
@@ -148,17 +136,20 @@ input ChangePasswordDto {
   newPassword: String!
 }
 
-input CreateProjectDto {
+input CreateUserTemplateDto {
   title: String!
   width: Int
   height: Int
+  thumbnailUrl: String
   content: JSON
+  isPublic: Boolean
 }
 
-input UpdateProjectDto {
+input UpdateUserTemplateDto {
   title: String
   width: Int
   height: Int
   thumbnailUrl: String
   content: JSON
+  isPublic: Boolean
 }

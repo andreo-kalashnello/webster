@@ -44,54 +44,54 @@
 
 ## 4. Backend: core (NestJS + GraphQL + MongoDB)
 
-- [ ] Инициализировать NestJS проект и модули.
-- [ ] Подключить Mongoose и модели коллекций.
-- [ ] Настроить GraphQLModule (Apollo).
-- [ ] Подключить ConfigModule + валидацию env.
-- [ ] Настроить глобальный ValidationPipe.
-- [ ] Настроить глобальные фильтры исключений.
-- [ ] Настроить CORS + helmet + rate limit.
-- [ ] Настроить health/readiness endpoints.
-- [ ] Настроить структурированные логи (request id, user id, latency).
+- [+] Инициализировать NestJS проект и модули.
+- [+] Подключить Mongoose и модели коллекций.
+- [+] Настроить GraphQLModule (Apollo).
+- [+] Подключить ConfigModule + валидацию env.
+- [+] Настроить глобальный ValidationPipe.
+- [+] Настроить глобальные фильтры исключений.
+- [+] Настроить CORS + helmet + rate limit.
+- [+] Настроить health/readiness endpoints.
+- [+] Настроить структурированные логи (request id, user id, latency).
 
 ## 5. Backend: auth и users
 
-- [ ] Mutation register.
-- [ ] Хеширование пароля (bcrypt/argon2).
-- [ ] Mutation login + выдача access/refresh.
-- [ ] Mutation refreshToken.
-- [ ] Mutation logout (инвалидация refresh).
-- [ ] Mutation verifyEmail.
-- [ ] Query me.
-- [ ] Mutation updateProfile.
-- [ ] Mutation changePassword.
-- [ ] GraphQL guards/directives для защищенных резолверов.
+- [+] Mutation register.
+- [+] Хеширование пароля (bcrypt/argon2).
+- [+] Mutation login + выдача access/refresh.
+- [+] Mutation refreshToken.
+- [+] Mutation logout (инвалидация refresh).
+- [+] Mutation verifyEmail.
+- [+] Query me.
+- [+] Mutation updateProfile.
+- [+] Mutation changePassword.
+- [+] GraphQL guards/directives для защищенных резолверов.
 
 ## 6. Backend: projects/templates/versioning
 
-- [ ] CRUD проектов через GraphQL.
-- [ ] Сохранение canvas state в MongoDB.
-- [ ] Автосохранение с debounce + server validation.
-- [ ] Создание snapshot версии проекта.
-- [ ] Получение списка версий проекта.
-- [ ] Восстановление выбранной версии.
-- [ ] Soft delete/restore проекта.
-- [ ] Базовые шаблоны (read-only).
-- [ ] Пользовательские шаблоны (create/update/delete).
-- [ ] Создание проекта из шаблона.
-- [ ] Проверка ownership на уровне service/resolver.
+- [+] CRUD проектов через GraphQL.
+- [+] Сохранение canvas state в MongoDB.
+- [+] Автосохранение с debounce + server validation.
+- [+] Создание snapshot версии проекта.
+- [+] Получение списка версий проекта.
+- [+] Восстановление выбранной версии.
+- [+] Soft delete/restore проекта.
+- [+] Базовые шаблоны (read-only).
+- [+] Пользовательские шаблоны (create/update/delete).
+- [+] Создание проекта из шаблона.
+- [+] Проверка ownership на уровне service/resolver.
 
 ## 7. Backend: uploads/export/share
 
-- [ ] Upload изображения (GraphQL upload или REST endpoint под upload).
-- [ ] Валидация MIME, размера и расширения.
-- [ ] Санитизация имени файла и безопасный storage path.
-- [ ] Удаление неиспользуемых файлов по расписанию.
-- [ ] Экспорт проекта в JPG.
-- [ ] Экспорт проекта в PNG.
-- [ ] Экспорт проекта в PDF.
-- [ ] Экспорт в дополнительный формат (SVG или WEBP).
-- [ ] Генерация публичной share-ссылки.
+- [+] Upload изображения (REST POST /upload, multipart/form-data).
+- [+] Валидация MIME, размера и расширения.
+- [+] Санитизация имени файла и безопасный storage path.
+- [+] Удаление неиспользуемых файлов по расписанию (cron, ежедневно).
+- [+] Экспорт проекта в JPG.
+- [+] Экспорт проекта в PNG.
+- [+] Экспорт проекта в PDF.
+- [+] Экспорт в дополнительный формат (SVG или WEBP).
+- [+] Генерация публичной share-ссылки.
 - [ ] Метаданные для preview (OG tags/preview endpoint).
 
 ## 8. Frontend: app shell и data layer
@@ -155,17 +155,17 @@
 
 ## 13. Тесты и качество
 
-- [ ] Unit-тесты backend services/resolvers.
+- [+] Unit-тесты backend services/resolvers (93 тестов).
 - [ ] Unit-тесты canvas math/render utils.
 - [ ] Unit-тесты editor commands (undo/redo, transform).
-- [ ] Integration-тесты GraphQL auth.
-- [ ] Integration-тесты GraphQL projects/templates.
-- [ ] E2E: register -> verify -> login.
-- [ ] E2E: create project -> edit -> autosave -> reload.
-- [ ] E2E: version save -> restore.
-- [ ] E2E: export JPG/PNG/PDF/additional.
-- [ ] E2E: user template create -> use in new project.
-- [ ] Негативные кейсы: 401/403/validation/upload limit.
+- [+] Integration-тесты GraphQL auth (18 e2e).
+- [+] Integration-тесты GraphQL projects/templates (25 + 8 e2e).
+- [+] E2E: register -> verify -> login.
+- [+] E2E: create project -> edit -> autosave -> reload.
+- [+] E2E: version save -> restore.
+- [+] E2E: export JPG/PNG/PDF/additional (assets e2e: 6 тестов).
+- [+] E2E: user template create -> use in new project.
+- [+] Негативные кейсы: 401/403/validation/upload limit.
 
 ## 14. Security/Performance hardening
 

@@ -1,7 +1,7 @@
 import {
-    ForbiddenException,
-    Injectable,
-    NotFoundException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
@@ -9,13 +9,18 @@ import { Model, Types } from "mongoose";
 import { CreateProjectDto } from "./dto/create-project.dto";
 import { ProjectsPageResponse, ProjectsPaginationDto } from "./dto/projects-pagination.dto";
 import { UpdateProjectDto } from "./dto/update-project.dto";
+import { ProjectVersionEntity } from "./entities/project-version.entity";
 import { ProjectEntity } from "./entities/project.entity";
+
+const MAX_PROJECT_VERSIONS = 20;
 
 @Injectable()
 export class ProjectsService {
   constructor(
     @InjectModel(ProjectEntity.name)
     private readonly projectModel: Model<ProjectEntity>,
+    @InjectModel(ProjectVersionEntity.name)
+    private readonly projectVersionModel: Model<ProjectVersionEntity>,
   ) {}
 
   async create(userId: string, input: CreateProjectDto): Promise<ProjectEntity> {
@@ -108,6 +113,59 @@ export class ProjectsService {
     });
   }
 
+  async createVersion(
+    projectId: string,
+    userId: string,
+    label?: string,
+  ): Promise<ProjectVersionEntity> {
+    const project = await this.findById(projectId, userId);
+
+    const version = await this.projectVersionModel.create({
+      projectId: new Types.ObjectId(projectId),
+      userId: new Types.ObjectId(userId),
+      label,
+      content: project.content ?? null,
+    });
+
+    await this.cleanupOldVersions(projectId);
+
+    return version;
+  }
+
+  async listVersions(projectId: string, userId: string): Promise<ProjectVersionEntity[]> {
+    await this.assertOwnership(projectId, userId);
+
+    return this.projectVersionModel
+      .find({ projectId: new Types.ObjectId(projectId) })
+      .sort({ createdAt: -1 })
+      .limit(MAX_PROJECT_VERSIONS)
+      .exec();
+  }
+
+  async restoreVersion(
+    projectId: string,
+    versionId: string,
+    userId: string,
+  ): Promise<ProjectEntity> {
+    await this.assertOwnership(projectId, userId);
+
+    const version = await this.projectVersionModel
+      .findOne({
+        _id: versionId,
+        projectId: new Types.ObjectId(projectId),
+        userId: new Types.ObjectId(userId),
+      })
+      .exec();
+    if (!version) throw new NotFoundException("Version not found");
+
+    const updatedProject = await this.projectModel
+      .findByIdAndUpdate(projectId, { $set: { content: version.content ?? null } }, { new: true })
+      .exec();
+    if (!updatedProject) throw new NotFoundException("Project not found");
+
+    return updatedProject;
+  }
+
   // ─── Internal ───────────────────────────────────────
 
   private async assertOwnership(id: string, userId: string): Promise<void> {
@@ -119,5 +177,21 @@ export class ProjectsService {
     if (project.userId.toString() !== userId) {
       throw new ForbiddenException("Access denied");
     }
+  }
+
+  private async cleanupOldVersions(projectId: string): Promise<void> {
+    const staleVersions = await this.projectVersionModel
+      .find({ projectId: new Types.ObjectId(projectId) })
+      .sort({ createdAt: -1 })
+      .skip(MAX_PROJECT_VERSIONS)
+      .select("_id")
+      .lean()
+      .exec();
+
+    if (staleVersions.length === 0) return;
+
+    await this.projectVersionModel
+      .deleteMany({ _id: { $in: staleVersions.map((v) => v._id) } })
+      .exec();
   }
 }

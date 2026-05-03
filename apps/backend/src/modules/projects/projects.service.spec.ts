@@ -3,6 +3,7 @@ import { getModelToken } from "@nestjs/mongoose";
 import { Test } from "@nestjs/testing";
 import { Types } from "mongoose";
 
+import { ProjectVersionEntity } from "./entities/project-version.entity";
 import { ProjectEntity } from "./entities/project.entity";
 import { ProjectsService } from "./projects.service";
 
@@ -37,6 +38,13 @@ describe("ProjectsService", () => {
     countDocuments: jest.fn(),
   };
 
+  const mockProjectVersionModel = {
+    create: jest.fn(),
+    find: jest.fn(),
+    findOne: jest.fn(),
+    deleteMany: jest.fn(),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
 
@@ -46,6 +54,10 @@ describe("ProjectsService", () => {
         {
           provide: getModelToken(ProjectEntity.name),
           useValue: mockProjectModel,
+        },
+        {
+          provide: getModelToken(ProjectVersionEntity.name),
+          useValue: mockProjectVersionModel,
         },
       ],
     }).compile();
@@ -218,6 +230,257 @@ describe("ProjectsService", () => {
       mockProjectModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
 
       await expect(service.clone(mockProjectId, mockUserId)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ─── versions ───────────────────────────────────────
+
+  describe("createVersion", () => {
+    it("should create snapshot from project content", async () => {
+      const project = makeProject({ content: { nodes: [{ id: 1 }] } });
+      const version = {
+        _id: new Types.ObjectId(),
+        id: new Types.ObjectId().toString(),
+        projectId: new Types.ObjectId(mockProjectId),
+        userId: new Types.ObjectId(mockUserId),
+        label: "v1",
+        content: { nodes: [{ id: 1 }] },
+        createdAt: new Date(),
+      };
+
+      mockProjectModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(project) });
+      mockProjectVersionModel.create.mockResolvedValue(version);
+      mockProjectVersionModel.find.mockReturnValue({
+        sort: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([]),
+      });
+
+      const result = await service.createVersion(mockProjectId, mockUserId, "v1");
+
+      expect(mockProjectVersionModel.create).toHaveBeenCalledWith(
+        expect.objectContaining({ label: "v1", content: { nodes: [{ id: 1 }] } }),
+      );
+      expect(result.label).toBe("v1");
+    });
+
+    it("should create version without label", async () => {
+      const project = makeProject({ content: null });
+      const version = {
+        _id: new Types.ObjectId(),
+        projectId: new Types.ObjectId(mockProjectId),
+        userId: new Types.ObjectId(mockUserId),
+        label: undefined,
+        content: null,
+        createdAt: new Date(),
+      };
+
+      mockProjectModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(project) });
+      mockProjectVersionModel.create.mockResolvedValue(version);
+      mockProjectVersionModel.find.mockReturnValue({
+        sort: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([]),
+      });
+
+      const result = await service.createVersion(mockProjectId, mockUserId);
+      expect(mockProjectVersionModel.create).toHaveBeenCalledWith(
+        expect.objectContaining({ content: null }),
+      );
+      expect(result.label).toBeUndefined();
+    });
+
+    it("should throw NotFoundException for non-existent project", async () => {
+      mockProjectModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
+
+      await expect(
+        service.createVersion(mockProjectId, mockUserId, "v1"),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it("should throw NotFoundException when project belongs to another user", async () => {
+      // createVersion uses findById which queries {_id, userId} — returns null for non-owner
+      mockProjectModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
+
+      await expect(
+        service.createVersion(mockProjectId, mockUserId, "v1"),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it("should trigger cleanup of old versions after creating", async () => {
+      const project = makeProject({ content: { nodes: [] } });
+      const staleVersions = Array.from({ length: 3 }, () => ({ _id: new Types.ObjectId() }));
+      const version = {
+        _id: new Types.ObjectId(),
+        projectId: new Types.ObjectId(mockProjectId),
+        userId: new Types.ObjectId(mockUserId),
+        content: { nodes: [] },
+        createdAt: new Date(),
+      };
+
+      mockProjectModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(project) });
+      mockProjectVersionModel.create.mockResolvedValue(version);
+      mockProjectVersionModel.find.mockReturnValue({
+        sort: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue(staleVersions),
+      });
+      mockProjectVersionModel.deleteMany = jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue({ deletedCount: 3 }) });
+
+      await service.createVersion(mockProjectId, mockUserId);
+
+      expect(mockProjectVersionModel.deleteMany).toHaveBeenCalledWith(
+        expect.objectContaining({ _id: { $in: staleVersions.map((v) => v._id) } }),
+      );
+    });
+  });
+
+  describe("listVersions", () => {
+    it("should return sorted versions for project owner", async () => {
+      const project = makeProject();
+      const versions = [
+        { id: "v2", createdAt: new Date() },
+        { id: "v1", createdAt: new Date() },
+      ];
+
+      mockProjectModel.findOne.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue(project),
+      });
+      mockProjectVersionModel.find.mockReturnValue({
+        sort: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue(versions),
+      });
+
+      const result = await service.listVersions(mockProjectId, mockUserId);
+      expect(result).toHaveLength(2);
+    });
+
+    it("should throw ForbiddenException for non-owner", async () => {
+      const otherProject = makeProject({ userId: new Types.ObjectId() });
+      mockProjectModel.findOne.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue(otherProject),
+      });
+
+      await expect(service.listVersions(mockProjectId, mockUserId)).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+
+    it("should throw NotFoundException when project does not exist", async () => {
+      mockProjectModel.findOne.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue(null),
+      });
+
+      await expect(service.listVersions(mockProjectId, mockUserId)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it("should return empty array when no versions exist", async () => {
+      const project = makeProject();
+      mockProjectModel.findOne.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue(project),
+      });
+      mockProjectVersionModel.find.mockReturnValue({
+        sort: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([]),
+      });
+
+      const result = await service.listVersions(mockProjectId, mockUserId);
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe("restoreVersion", () => {
+    it("should restore project content from selected version", async () => {
+      const project = makeProject();
+      const restored = makeProject({ content: { shapes: [{ id: "s1" }] } });
+
+      mockProjectModel.findOne.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue(project),
+      });
+      mockProjectVersionModel.findOne.mockReturnValue({
+        exec: jest.fn().mockResolvedValue({ content: { shapes: [{ id: "s1" }] } }),
+      });
+      mockProjectModel.findByIdAndUpdate.mockReturnValue({
+        exec: jest.fn().mockResolvedValue(restored),
+      });
+
+      const result = await service.restoreVersion(
+        mockProjectId,
+        new Types.ObjectId().toString(),
+        mockUserId,
+      );
+
+      expect(result.content).toEqual({ shapes: [{ id: "s1" }] });
+    });
+
+    it("should throw NotFoundException when version not found", async () => {
+      const project = makeProject();
+
+      mockProjectModel.findOne.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue(project),
+      });
+      mockProjectVersionModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
+
+      await expect(
+        service.restoreVersion(mockProjectId, new Types.ObjectId().toString(), mockUserId),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it("should throw ForbiddenException for non-owner", async () => {
+      const otherProject = makeProject({ userId: new Types.ObjectId() });
+      mockProjectModel.findOne.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue(otherProject),
+      });
+
+      await expect(
+        service.restoreVersion(mockProjectId, new Types.ObjectId().toString(), mockUserId),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it("should restore version with null content", async () => {
+      const project = makeProject();
+      const restored = makeProject({ content: null });
+
+      mockProjectModel.findOne.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue(project),
+      });
+      mockProjectVersionModel.findOne.mockReturnValue({
+        exec: jest.fn().mockResolvedValue({ content: null }),
+      });
+      mockProjectModel.findByIdAndUpdate.mockReturnValue({
+        exec: jest.fn().mockResolvedValue(restored),
+      });
+
+      const result = await service.restoreVersion(
+        mockProjectId,
+        new Types.ObjectId().toString(),
+        mockUserId,
+      );
+
+      expect(mockProjectModel.findByIdAndUpdate).toHaveBeenCalledWith(
+        mockProjectId,
+        { $set: { content: null } },
+        { new: true },
+      );
+      expect(result.content).toBeNull();
     });
   });
 });

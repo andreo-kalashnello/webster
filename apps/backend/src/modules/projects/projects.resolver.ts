@@ -7,6 +7,7 @@ import { UserEntity } from "../users/entities/user.entity";
 import { CreateProjectDto } from "./dto/create-project.dto";
 import { ProjectsPageResponse, ProjectsPaginationDto } from "./dto/projects-pagination.dto";
 import { UpdateProjectDto } from "./dto/update-project.dto";
+import { ProjectVersionEntity } from "./entities/project-version.entity";
 import { ProjectEntity } from "./entities/project.entity";
 import { ProjectsService } from "./projects.service";
 
@@ -76,5 +77,31 @@ export class ProjectsResolver {
     @Args("id", { type: () => ID }) id: string,
   ) {
     return this.projectsService.clone(id, user.id);
+  }
+
+  @Mutation(() => ProjectVersionEntity)
+  createVersion(
+    @CurrentUser() user: UserEntity,
+    @Args("projectId", { type: () => ID }) projectId: string,
+    @Args("label", { nullable: true }) label?: string,
+  ) {
+    return this.projectsService.createVersion(projectId, user.id, label);
+  }
+
+  @Query(() => [ProjectVersionEntity])
+  versions(
+    @CurrentUser() user: UserEntity,
+    @Args("projectId", { type: () => ID }) projectId: string,
+  ) {
+    return this.projectsService.listVersions(projectId, user.id);
+  }
+
+  @Mutation(() => ProjectEntity)
+  restoreVersion(
+    @CurrentUser() user: UserEntity,
+    @Args("projectId", { type: () => ID }) projectId: string,
+    @Args("versionId", { type: () => ID }) versionId: string,
+  ) {
+    return this.projectsService.restoreVersion(projectId, versionId, user.id);
   }
 }

@@ -8,3 +8,5 @@ coverage/
 *.log
 .DS_Store
 tsconfig.tsbuildinfo
+uploads/
+exports/

@@ -35,20 +35,6 @@ type MessageResponse {
   message: String!
 }
 
-type ProjectVersionEntity {
-  id: ID!
-  projectId: ID!
-  userId: ID!
-  label: String
-  content: JSON
-  createdAt: DateTime!
-}
-
-"""
-The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
-"""
-scalar JSON
-
 type ProjectEntity {
   id: ID!
   userId: ID!
@@ -59,6 +45,32 @@ type ProjectEntity {
   content: JSON
   createdAt: DateTime!
   updatedAt: DateTime!
+}
+
+"""
+The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSON
+
+type ShareLinkResponse {
+  token: String!
+  url: String!
+  expiresAt: DateTime
+}
+
+type ExportAssetResponse {
+  fileName: String!
+  mimeType: String!
+  url: String!
+}
+
+type ProjectVersionEntity {
+  id: ID!
+  projectId: ID!
+  userId: ID!
+  label: String
+  content: JSON
+  createdAt: DateTime!
 }
 
 type ProjectsPageResponse {
@@ -73,6 +85,7 @@ type Query {
   projects(pagination: ProjectsPaginationDto): ProjectsPageResponse!
   project(id: ID!): ProjectEntity!
   versions(projectId: ID!): [ProjectVersionEntity!]!
+  resolveShareLink(token: String!): ProjectEntity!
 }
 
 input ProjectsPaginationDto {
@@ -103,6 +116,11 @@ type Mutation {
   cloneProject(id: ID!): ProjectEntity!
   createVersion(projectId: ID!, label: String): ProjectVersionEntity!
   restoreVersion(projectId: ID!, versionId: ID!): ProjectEntity!
+  createShareLink(projectId: ID!, expiresInHours: Float): ShareLinkResponse!
+  exportPng(projectId: ID!): ExportAssetResponse!
+  exportJpg(projectId: ID!): ExportAssetResponse!
+  exportPdf(projectId: ID!): ExportAssetResponse!
+  exportAdditionalFormat(projectId: ID!, format: String!): ExportAssetResponse!
 }
 
 input UpdateProfileDto {

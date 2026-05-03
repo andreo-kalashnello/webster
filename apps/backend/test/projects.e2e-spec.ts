@@ -156,6 +156,7 @@ describe("Projects E2E", () => {
   });
 
   let projectId: string;
+  let versionId: string;
 
   describe("createProject", () => {
     it("should create a project with default dimensions", async () => {
@@ -387,6 +388,116 @@ describe("Projects E2E", () => {
     it("deleted project should not appear in list", async () => {
       const res = await gqlAs(authCookies, `
         query { project(id: "${projectId}") { id } }
+      `);
+
+      expect(res.body.errors).toBeDefined();
+    });
+  });
+
+  describe("versions", () => {
+    let versionsProjectId: string;
+
+    it("should create a project version", async () => {
+      const projectRes = await gqlAs(authCookies, `
+        mutation {
+          createProject(input: { title: "Versioned Project" }) {
+            id
+          }
+        }
+      `);
+      expect(projectRes.body.errors).toBeUndefined();
+      versionsProjectId = projectRes.body.data.createProject.id;
+
+      const saveRes = await gqlAs(authCookies, `
+        mutation {
+          autosaveProject(
+            id: "${versionsProjectId}"
+            content: { shapes: [{ type: "circle", radius: 40 }] }
+          ) { id }
+        }
+      `);
+      expect(saveRes.body.errors).toBeUndefined();
+
+      const res = await gqlAs(authCookies, `
+        mutation {
+          createVersion(projectId: "${versionsProjectId}" label: "Checkpoint 1") {
+            id
+            projectId
+            label
+            content
+          }
+        }
+      `);
+
+      expect(res.status).toBe(200);
+      expect(res.body.errors).toBeUndefined();
+      expect(res.body.data.createVersion.projectId).toBe(versionsProjectId);
+      expect(res.body.data.createVersion.label).toBe("Checkpoint 1");
+      expect(res.body.data.createVersion.content.shapes[0].type).toBe("circle");
+
+      versionId = res.body.data.createVersion.id;
+    });
+
+    it("should list versions for owner", async () => {
+      const res = await gqlAs(authCookies, `
+        query {
+          versions(projectId: "${versionsProjectId}") {
+            id
+            label
+            createdAt
+          }
+        }
+      `);
+
+      expect(res.status).toBe(200);
+      expect(res.body.errors).toBeUndefined();
+      expect(res.body.data.versions.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it("should deny versions list for non-owner", async () => {
+      const res = await gqlAs(otherCookies, `
+        query {
+          versions(projectId: "${versionsProjectId}") {
+            id
+          }
+        }
+      `);
+
+      expect(res.body.errors).toBeDefined();
+    });
+
+    it("should restore project from selected version", async () => {
+      const mutateRes = await gqlAs(authCookies, `
+        mutation {
+          autosaveProject(
+            id: "${versionsProjectId}"
+            content: { shapes: [{ type: "triangle" }] }
+          ) { id }
+        }
+      `);
+      expect(mutateRes.body.errors).toBeUndefined();
+
+      const restoreRes = await gqlAs(authCookies, `
+        mutation {
+          restoreVersion(projectId: "${versionsProjectId}" versionId: "${versionId}") {
+            id
+            content
+          }
+        }
+      `);
+
+      expect(restoreRes.status).toBe(200);
+      expect(restoreRes.body.errors).toBeUndefined();
+      expect(restoreRes.body.data.restoreVersion.content.shapes[0].type).toBe("circle");
+    });
+
+    it("should deny restore by non-owner", async () => {
+      const res = await gqlAs(otherCookies, `
+        mutation {
+          restoreVersion(projectId: "${versionsProjectId}" versionId: "${versionId}") {
+            id
+          }
+        }
       `);
 
       expect(res.body.errors).toBeDefined();
