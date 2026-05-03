@@ -1380,6 +1380,36 @@
               ]
             }
           }
+        },
+        {
+          "name": "System Status (GQL)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"query {\\n  systemStatus {\\n    api\\n    db\\n    timestamp\\n  }\\n}\",\n  \"variables\": {}\n}"
+            }
+          }
         }
       ]
     }
