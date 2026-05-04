@@ -1,1 +1,15 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
+
+:root {
+	--brand-ink: #0b0f1a;
+	--brand-night: #121826;
+	--brand-glow: #1f3b4d;
+	--brand-accent: #37c98b;
+}
+
+body {
+	font-family: "Space Grotesk", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+	background-color: var(--brand-ink);
+	color: #f8fafc;
+}

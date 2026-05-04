@@ -3,9 +3,9 @@ import "reflect-metadata";
 import { Logger, ValidationPipe } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { NestFactory } from "@nestjs/core";
-import cookieParser from "cookie-parser";
-import mongoSanitize from "express-mongo-sanitize";
 import helmet from "helmet";
+
+const cookieParser = require("cookie-parser");
 
 import { AppModule } from "./app.module";
 import { HttpExceptionFilter } from "./infra/common/filters/http-exception.filter";
@@ -19,8 +19,6 @@ async function bootstrap() {
   app.use(helmet());
 
   app.use(cookieParser());
-
-  app.use(mongoSanitize());
 
   const allowedOrigins = config.get<string>("FRONTEND_URL")!;
   app.enableCors({

@@ -1,7 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link, Route, Routes } from "react-router-dom";
 
+import { PrivateRoute } from "./components/PrivateRoute.tsx";
 import { CanvasEnginePage } from "./pages/CanvasEnginePage.tsx";
+import { EditorPage } from "./pages/EditorPage.tsx";
+import { LoginPage } from "./pages/LoginPage.tsx";
+import { ProfilePage } from "./pages/ProfilePage.tsx";
+import { ProjectsPage } from "./pages/ProjectsPage.tsx";
+import { RegisterPage } from "./pages/RegisterPage.tsx";
+import { ResetPasswordPage } from "./pages/ResetPasswordPage.tsx";
+import { TemplatesPage } from "./pages/TemplatesPage.tsx";
+import { UserTemplatesPage } from "./pages/UserTemplatesPage.tsx";
+import { VerifyEmailPage } from "./pages/VerifyEmailPage.tsx";
 
 type Status = {
   api: string;
@@ -19,6 +29,50 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route
+        path="/profile"
+        element={
+          <PrivateRoute>
+            <ProfilePage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/projects"
+        element={
+          <PrivateRoute>
+            <ProjectsPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/templates"
+        element={
+          <PrivateRoute>
+            <TemplatesPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/user-templates"
+        element={
+          <PrivateRoute>
+            <UserTemplatesPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/editor"
+        element={
+          <PrivateRoute>
+            <EditorPage />
+          </PrivateRoute>
+        }
+      />
       <Route path="/canvas-engine" element={<CanvasEnginePage />} />
     </Routes>
   );
@@ -69,45 +123,115 @@ function HomePage() {
     };
   }, []);
 
-  const apiStatusClass = status.api === "ok" ? "text-emerald-700" : "text-rose-700";
-  const dbStatusClass = status.db === "connected" ? "text-emerald-700" : "text-rose-700";
+  const apiStatusClass = status.api === "ok" ? "text-emerald-300" : "text-rose-300";
+  const dbStatusClass = status.db === "connected" ? "text-emerald-300" : "text-rose-300";
 
   return (
-    <main className="grid min-h-screen place-items-center bg-[radial-gradient(circle_at_20%_20%,#e0f2fe,#f8fafc_60%)] px-6 py-8 font-sans">
-      <section className="w-full max-w-xl rounded-2xl border border-sky-100 bg-white/95 p-6 shadow-[0_20px_40px_rgba(15,23,42,0.08)] backdrop-blur-sm">
-        <h1 className="mb-2 text-3xl font-semibold tracking-tight text-slate-900">Webster Test Frontend</h1>
-        <p className="mb-5 text-sm text-slate-600">Проверка подключения к backend API и MongoDB</p>
+    <main className="min-h-screen bg-[radial-gradient(circle_at_12%_15%,#223046,transparent_40%),radial-gradient(circle_at_85%_10%,#3b1e2e,transparent_35%),linear-gradient(135deg,#0b0f1a,#121826)] text-slate-100">
+      <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col gap-12 px-6 py-12">
+        <div className="absolute -left-24 top-16 h-64 w-64 rounded-full bg-emerald-400/20 blur-3xl" />
+        <div className="absolute right-0 top-32 h-72 w-72 rounded-full bg-sky-400/20 blur-3xl" />
 
-        <div className="mb-5">
-          <Link
-            className="font-semibold text-blue-700 underline-offset-4 transition-colors hover:text-blue-800 hover:underline"
-            to="/canvas-engine"
-          >
-            Открыть страницу теста движка
-          </Link>
-        </div>
+        <header className="relative z-10 flex items-center justify-between">
+          <div className="text-sm uppercase tracking-[0.3em] text-slate-400">CUMpus</div>
+          <nav className="flex items-center gap-4 text-sm">
+            <Link
+              className="rounded-full border border-slate-600/60 px-4 py-2 text-slate-200 transition hover:border-slate-400 hover:text-white"
+              to="/login"
+            >
+              Sign In
+            </Link>
+            <Link
+              className="rounded-full bg-emerald-400 px-4 py-2 font-semibold text-slate-900 transition hover:bg-emerald-300"
+              to="/register"
+            >
+              Get Started
+            </Link>
+          </nav>
+        </header>
 
-        <div className="flex items-center justify-between border-b border-slate-100 py-2.5 text-sm">
-          <span>API:</span>
-          <strong className={`font-semibold ${apiStatusClass}`}>{status.api}</strong>
-        </div>
+        <section className="relative z-10 grid gap-10 lg:grid-cols-[1.2fr_0.8fr]">
+          <div>
+            <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl">
+              Webster — онлайн редактор для швидких кампусних матеріалів
+            </h1>
+            <p className="mt-5 max-w-xl text-lg text-slate-300">
+              Збирайте афіші, оголошення та презентації за лічені хвилини.
+              Одна реєстрація, і редактор готовий до роботи.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-4">
+              <Link
+                className="rounded-full bg-emerald-400 px-6 py-3 font-semibold text-slate-900 transition hover:bg-emerald-300"
+                to="/register"
+              >
+                Створити акаунт
+              </Link>
+              <Link
+                className="rounded-full border border-slate-600/60 px-6 py-3 font-semibold text-slate-100 transition hover:border-slate-400"
+                to="/login"
+              >
+                Увійти
+              </Link>
+              <Link
+                className="rounded-full border border-slate-700/60 px-6 py-3 text-slate-300 transition hover:border-slate-500 hover:text-white"
+                to="/canvas-engine"
+              >
+                Тест Canvas Engine
+              </Link>
+            </div>
+            <div className="mt-6 flex flex-wrap gap-4 text-sm">
+              <Link
+                className="rounded-full border border-slate-700/60 px-4 py-2 text-slate-200 transition hover:border-slate-500 hover:text-white"
+                to="/projects"
+              >
+                Список проєктів
+              </Link>
+              <Link
+                className="rounded-full border border-slate-700/60 px-4 py-2 text-slate-200 transition hover:border-slate-500 hover:text-white"
+                to="/templates"
+              >
+                Шаблони
+              </Link>
+            </div>
+            <div className="mt-10 grid gap-4 text-sm text-slate-300 sm:grid-cols-2">
+              <div className="rounded-2xl border border-slate-700/60 bg-slate-900/40 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Швидкий старт</p>
+                <p className="mt-2">Одразу після реєстрації можна працювати з редактором.</p>
+              </div>
+              <div className="rounded-2xl border border-slate-700/60 bg-slate-900/40 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Зручні сесії</p>
+                <p className="mt-2">Авторизація через токени зберігається автоматично.</p>
+              </div>
+            </div>
+          </div>
 
-        <div className="flex items-center justify-between border-b border-slate-100 py-2.5 text-sm">
-          <span>DB:</span>
-          <strong className={`font-semibold ${dbStatusClass}`}>{status.db}</strong>
-        </div>
+          <div className="rounded-3xl border border-slate-700/60 bg-slate-900/50 p-6 shadow-[0_20px_60px_rgba(8,12,22,0.5)]">
+            <h2 className="text-lg font-semibold text-white">Стан сервісу</h2>
+            <p className="mt-1 text-sm text-slate-400">Поточне підключення API та бази.</p>
 
-        <div className="flex items-center justify-between py-2.5 text-sm">
-          <span>Updated:</span>
-          <strong className="font-semibold text-slate-900">{status.timestamp}</strong>
-        </div>
+            <div className="mt-6 space-y-4 text-sm">
+              <div className="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                <span className="text-slate-400">API</span>
+                <strong className={`font-semibold ${apiStatusClass}`}>{status.api}</strong>
+              </div>
+              <div className="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                <span className="text-slate-400">DB</span>
+                <strong className={`font-semibold ${dbStatusClass}`}>{status.db}</strong>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Updated</span>
+                <strong className="font-semibold text-slate-200">{status.timestamp}</strong>
+              </div>
+            </div>
 
-        {error ? (
-          <p className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-            Ошибка: {error}
-          </p>
-        ) : null}
-      </section>
+            {error ? (
+              <p className="mt-4 rounded-xl border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
+                Ошибка: {error}
+              </p>
+            ) : null}
+          </div>
+        </section>
+      </div>
     </main>
   );
 }
