@@ -64,12 +64,6 @@ type ExportAssetResponse {
   url: String!
 }
 
-type SystemStatus {
-  api: String!
-  db: String!
-  timestamp: String!
-}
-
 type ProjectVersionEntity {
   id: ID!
   projectId: ID!
@@ -86,27 +80,11 @@ type ProjectsPageResponse {
   totalPages: Int!
 }
 
-type TemplateEntity {
-  id: ID!
-  userId: ID
-  title: String!
-  thumbnailUrl: String
-  width: Int!
-  height: Int!
-  content: JSON
-  isPublic: Boolean!
-  createdAt: DateTime!
-  updatedAt: DateTime!
-}
-
 type Query {
-  systemStatus: SystemStatus!
   me: UserEntity!
   projects(pagination: ProjectsPaginationDto): ProjectsPageResponse!
   project(id: ID!): ProjectEntity!
   versions(projectId: ID!): [ProjectVersionEntity!]!
-  baseTemplates: [TemplateEntity!]!
-  userTemplates: [TemplateEntity!]!
   resolveShareLink(token: String!): ProjectEntity!
 }
 
@@ -138,10 +116,6 @@ type Mutation {
   cloneProject(id: ID!): ProjectEntity!
   createVersion(projectId: ID!, label: String): ProjectVersionEntity!
   restoreVersion(projectId: ID!, versionId: ID!): ProjectEntity!
-  createUserTemplate(input: CreateUserTemplateDto!): TemplateEntity!
-  updateUserTemplate(id: ID!, input: UpdateUserTemplateDto!): TemplateEntity!
-  deleteUserTemplate(id: ID!): Boolean!
-  createProjectFromTemplate(templateId: ID!, title: String): ProjectEntity!
   createShareLink(projectId: ID!, expiresInHours: Float): ShareLinkResponse!
   exportPng(projectId: ID!): ExportAssetResponse!
   exportJpg(projectId: ID!): ExportAssetResponse!
@@ -205,22 +179,4 @@ input UpdateProjectDto {
   height: Int
   thumbnailUrl: String
   content: JSON
-}
-
-input CreateUserTemplateDto {
-  title: String!
-  width: Int
-  height: Int
-  thumbnailUrl: String
-  content: JSON
-  isPublic: Boolean
-}
-
-input UpdateUserTemplateDto {
-  title: String
-  width: Int
-  height: Int
-  thumbnailUrl: String
-  content: JSON
-  isPublic: Boolean
 }

@@ -10,4 +10,6 @@ module.exports = {
     "^.+\\.[tj]sx?$": ["ts-jest", { tsconfig: "tsconfig.json" }],
   },
   testTimeout: 30000,
+  // Run serially to avoid mongoose singleton conflicts between test files
+  maxWorkers: 1,
 };

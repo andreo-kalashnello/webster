@@ -7,6 +7,7 @@ import {
     Logger,
 } from "@nestjs/common";
 import { GqlArgumentsHost, type GqlContextType } from "@nestjs/graphql";
+import type { Request } from "express";
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -16,6 +17,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
     if (host.getType<GqlContextType>() === "graphql") {
       const gqlHost = GqlArgumentsHost.create(host);
       const info = gqlHost.getInfo();
+      const { req } = gqlHost.getContext<{ req: Request & { requestId?: string } }>();
+      const requestId = req?.requestId ?? "-";
 
       const status =
         exception instanceof HttpException
@@ -29,9 +32,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
       if (status >= 500) {
         this.logger.error(
-          `GraphQL ${info?.fieldName}: ${message}`,
+          `[${requestId}] GraphQL ${info?.fieldName}: ${message}`,
           exception instanceof Error ? exception.stack : undefined,
         );
+      } else if (status >= 400) {
+        this.logger.warn(`[${requestId}] GraphQL ${info?.fieldName}: ${message} (${status})`);
       }
 
       // Re-throw for Apollo error formatting (no stack traces leak to client)
@@ -44,7 +49,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     // REST fallback (health checks, etc.)
     const ctx = host.switchToHttp();
+    const req = ctx.getRequest<Request & { requestId?: string }>();
     const response = ctx.getResponse();
+    const requestId = req?.requestId ?? "-";
 
     const status =
       exception instanceof HttpException
@@ -58,9 +65,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     if (status >= 500) {
       this.logger.error(
-        message,
+        `[${requestId}] ${req?.method} ${req?.url}: ${message}`,
         exception instanceof Error ? exception.stack : undefined,
       );
+    } else if (status >= 400) {
+      this.logger.warn(`[${requestId}] ${req?.method} ${req?.url}: ${message} (${status})`);
     }
 
     response.status(status).json({

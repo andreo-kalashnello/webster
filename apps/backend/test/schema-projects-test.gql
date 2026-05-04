@@ -35,6 +35,20 @@ type MessageResponse {
   message: String!
 }
 
+type ProjectVersionEntity {
+  id: ID!
+  projectId: ID!
+  userId: ID!
+  label: String
+  content: JSON
+  createdAt: DateTime!
+}
+
+"""
+The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSON
+
 type ProjectEntity {
   id: ID!
   userId: ID!
@@ -47,38 +61,6 @@ type ProjectEntity {
   updatedAt: DateTime!
 }
 
-"""
-The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
-"""
-scalar JSON
-
-type ShareLinkResponse {
-  token: String!
-  url: String!
-  expiresAt: DateTime
-}
-
-type ExportAssetResponse {
-  fileName: String!
-  mimeType: String!
-  url: String!
-}
-
-type SystemStatus {
-  api: String!
-  db: String!
-  timestamp: String!
-}
-
-type ProjectVersionEntity {
-  id: ID!
-  projectId: ID!
-  userId: ID!
-  label: String
-  content: JSON
-  createdAt: DateTime!
-}
-
 type ProjectsPageResponse {
   items: [ProjectEntity!]!
   total: Int!
@@ -86,28 +68,11 @@ type ProjectsPageResponse {
   totalPages: Int!
 }
 
-type TemplateEntity {
-  id: ID!
-  userId: ID
-  title: String!
-  thumbnailUrl: String
-  width: Int!
-  height: Int!
-  content: JSON
-  isPublic: Boolean!
-  createdAt: DateTime!
-  updatedAt: DateTime!
-}
-
 type Query {
-  systemStatus: SystemStatus!
   me: UserEntity!
   projects(pagination: ProjectsPaginationDto): ProjectsPageResponse!
   project(id: ID!): ProjectEntity!
   versions(projectId: ID!): [ProjectVersionEntity!]!
-  baseTemplates: [TemplateEntity!]!
-  userTemplates: [TemplateEntity!]!
-  resolveShareLink(token: String!): ProjectEntity!
 }
 
 input ProjectsPaginationDto {
@@ -138,15 +103,6 @@ type Mutation {
   cloneProject(id: ID!): ProjectEntity!
   createVersion(projectId: ID!, label: String): ProjectVersionEntity!
   restoreVersion(projectId: ID!, versionId: ID!): ProjectEntity!
-  createUserTemplate(input: CreateUserTemplateDto!): TemplateEntity!
-  updateUserTemplate(id: ID!, input: UpdateUserTemplateDto!): TemplateEntity!
-  deleteUserTemplate(id: ID!): Boolean!
-  createProjectFromTemplate(templateId: ID!, title: String): ProjectEntity!
-  createShareLink(projectId: ID!, expiresInHours: Float): ShareLinkResponse!
-  exportPng(projectId: ID!): ExportAssetResponse!
-  exportJpg(projectId: ID!): ExportAssetResponse!
-  exportPdf(projectId: ID!): ExportAssetResponse!
-  exportAdditionalFormat(projectId: ID!, format: String!): ExportAssetResponse!
 }
 
 input UpdateProfileDto {
@@ -205,22 +161,4 @@ input UpdateProjectDto {
   height: Int
   thumbnailUrl: String
   content: JSON
-}
-
-input CreateUserTemplateDto {
-  title: String!
-  width: Int
-  height: Int
-  thumbnailUrl: String
-  content: JSON
-  isPublic: Boolean
-}
-
-input UpdateUserTemplateDto {
-  title: String
-  width: Int
-  height: Int
-  thumbnailUrl: String
-  content: JSON
-  isPublic: Boolean
 }
