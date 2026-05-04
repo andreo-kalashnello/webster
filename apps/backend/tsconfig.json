@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "Node16",
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
@@ -14,13 +14,13 @@
     "strict": true,
     "skipLibCheck": true,
     "isolatedModules": true,
-    "moduleResolution": "node",
-    "types": ["jest", "node"]
+    "moduleResolution": "Node16",
+    "types": ["jest", "node", "multer"]
   },
   "ts-node": {
     "transpileOnly": true,
     "compilerOptions": {
-      "module": "commonjs"
+      "module": "Node16"
     }
   },
   "include": ["src/**/*.ts"],

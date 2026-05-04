@@ -1,0 +1,1417 @@
+{
+  "info": {
+    "name": "Webster Backend",
+    "_postman_id": "webster-backend-v2",
+    "description": "GraphQL API для Webster Backend.\n\nВсе GraphQL запросы — POST {{baseUrl}}/graphql с Content-Type: application/json.\nАутентификация через HttpOnly куки (access_token, refresh_token) — Postman сохраняет их автоматически.\n\nПеременные коллекции:\n  baseUrl       — http://localhost:4000\n  projectId     — заполняется автоматически после Create Project\n  versionId     — заполняется автоматически после Create Version\n  templateId    — заполняется автоматически после Create User Template\n  shareToken    — заполняется автоматически после Create Share Link",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000",
+      "type": "string"
+    },
+    {
+      "key": "projectId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "versionId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "templateId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "shareToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation Register($input: RegisterDto!) {\\n  register(input: $input) {\\n    message\\n  }\\n}\",\n  \"variables\": {\n    \"input\": {\n      \"email\": \"user@example.com\",\n      \"password\": \"password123\",\n      \"firstName\": \"John\",\n      \"lastName\": \"Doe\"\n    }\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Login successful', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.errors).to.be.undefined;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation Login($input: LoginDto!) {\\n  login(input: $input) {\\n    message\\n  }\\n}\",\n  \"variables\": {\n    \"input\": {\n      \"email\": \"user@example.com\",\n      \"password\": \"password123\"\n    }\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Login with 2FA",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation Login($input: LoginDto!) {\\n  login(input: $input) {\\n    message\\n  }\\n}\",\n  \"variables\": {\n    \"input\": {\n      \"email\": \"user@example.com\",\n      \"password\": \"password123\",\n      \"twoFactorCode\": \"123456\"\n    }\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation {\\n  refreshToken {\\n    message\\n  }\\n}\",\n  \"variables\": {}\n}"
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation {\\n  logout {\\n    message\\n  }\\n}\",\n  \"variables\": {}\n}"
+            }
+          }
+        },
+        {
+          "name": "Verify Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation VerifyEmail($token: String!) {\\n  verifyEmail(token: $token) {\\n    message\\n  }\\n}\",\n  \"variables\": {\n    \"token\": \"<email-verification-token>\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Request Password Reset",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation RequestPasswordReset($input: RequestPasswordResetDto!) {\\n  requestPasswordReset(input: $input) {\\n    message\\n  }\\n}\",\n  \"variables\": {\n    \"input\": {\n      \"email\": \"user@example.com\"\n    }\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation ResetPassword($input: ResetPasswordDto!) {\\n  resetPassword(input: $input) {\\n    message\\n  }\\n}\",\n  \"variables\": {\n    \"input\": {\n      \"token\": \"<reset-token>\",\n      \"newPassword\": \"newpassword123\"\n    }\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Request Magic Link",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation RequestMagicLink($input: RequestMagicLinkDto!) {\\n  requestMagicLink(input: $input) {\\n    message\\n  }\\n}\",\n  \"variables\": {\n    \"input\": {\n      \"email\": \"user@example.com\"\n    }\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Verify Magic Link",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation VerifyMagicLink($token: String!) {\\n  verifyMagicLink(token: $token) {\\n    message\\n  }\\n}\",\n  \"variables\": {\n    \"token\": \"<magic-link-token>\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "OAuth Login (Google / Facebook / Github)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation OAuthLogin($input: OAuthLoginDto!) {\\n  oauthLogin(input: $input) {\\n    message\\n  }\\n}\",\n  \"variables\": {\n    \"input\": {\n      \"provider\": \"Google\",\n      \"code\": \"<oauth-authorization-code>\",\n      \"redirectUri\": \"http://localhost:5173/auth/callback\"\n    }\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation ChangePassword($input: ChangePasswordDto!) {\\n  changePassword(input: $input) {\\n    message\\n  }\\n}\",\n  \"variables\": {\n    \"input\": {\n      \"currentPassword\": \"password123\",\n      \"newPassword\": \"newpassword123\"\n    }\n  }\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Two-Factor Auth",
+      "item": [
+        {
+          "name": "Generate 2FA Secret",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation {\\n  generateTwoFactorSecret {\\n    secret\\n    qrCodeUrl\\n  }\\n}\",\n  \"variables\": {}\n}"
+            }
+          }
+        },
+        {
+          "name": "Enable 2FA",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation EnableTwoFactor($code: String!) {\\n  enableTwoFactor(code: $code) {\\n    message\\n  }\\n}\",\n  \"variables\": {\n    \"code\": \"123456\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Disable 2FA",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation DisableTwoFactor($password: String!) {\\n  disableTwoFactor(password: $password) {\\n    message\\n  }\\n}\",\n  \"variables\": {\n    \"password\": \"password123\"\n  }\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Profile",
+      "item": [
+        {
+          "name": "Me (current user)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"query {\\n  me {\\n    id\\n    email\\n    firstName\\n    lastName\\n    avatarUrl\\n    isEmailVerified\\n    isTwoFactorEnabled\\n    oauthProvider\\n    createdAt\\n    updatedAt\\n  }\\n}\",\n  \"variables\": {}\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation UpdateProfile($input: UpdateProfileDto!) {\\n  updateProfile(input: $input) {\\n    id\\n    firstName\\n    lastName\\n    avatarUrl\\n  }\\n}\",\n  \"variables\": {\n    \"input\": {\n      \"firstName\": \"Jane\",\n      \"lastName\": \"Doe\",\n      \"avatarUrl\": \"https://example.com/avatar.png\"\n    }\n  }\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Projects",
+      "item": [
+        {
+          "name": "Create Project",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.createProject) {",
+                  "  pm.collectionVariables.set('projectId', json.data.createProject.id);",
+                  "  console.log('projectId saved:', json.data.createProject.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation CreateProject($input: CreateProjectDto!) {\\n  createProject(input: $input) {\\n    id\\n    title\\n    width\\n    height\\n    createdAt\\n  }\\n}\",\n  \"variables\": {\n    \"input\": {\n      \"title\": \"My Canvas\",\n      \"width\": 1920,\n      \"height\": 1080\n    }\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "List Projects (paginated)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"query Projects($pagination: ProjectsPaginationDto) {\\n  projects(pagination: $pagination) {\\n    items {\\n      id\\n      title\\n      width\\n      height\\n      thumbnailUrl\\n      createdAt\\n      updatedAt\\n    }\\n    total\\n    page\\n    totalPages\\n  }\\n}\",\n  \"variables\": {\n    \"pagination\": { \"page\": 1, \"limit\": 20 }\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Project by ID",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"query Project($id: ID!) {\\n  project(id: $id) {\\n    id\\n    title\\n    width\\n    height\\n    thumbnailUrl\\n    content\\n    createdAt\\n    updatedAt\\n  }\\n}\",\n  \"variables\": {\n    \"id\": \"{{projectId}}\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Project",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation UpdateProject($id: ID!, $input: UpdateProjectDto!) {\\n  updateProject(id: $id, input: $input) {\\n    id\\n    title\\n    width\\n    height\\n    updatedAt\\n  }\\n}\",\n  \"variables\": {\n    \"id\": \"{{projectId}}\",\n    \"input\": {\n      \"title\": \"Renamed Canvas\",\n      \"width\": 1280,\n      \"height\": 720\n    }\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Autosave Project",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation AutosaveProject($id: ID!, $content: JSON!, $thumbnailUrl: String) {\\n  autosaveProject(id: $id, content: $content, thumbnailUrl: $thumbnailUrl) {\\n    id\\n    thumbnailUrl\\n    updatedAt\\n  }\\n}\",\n  \"variables\": {\n    \"id\": \"{{projectId}}\",\n    \"content\": {\n      \"version\": 1,\n      \"shapes\": [\n        { \"type\": \"rect\", \"x\": 100, \"y\": 100, \"width\": 200, \"height\": 150, \"fill\": \"#ff0000\" }\n      ]\n    },\n    \"thumbnailUrl\": \"https://cdn.example.com/thumb.png\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Clone Project",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation CloneProject($id: ID!) {\\n  cloneProject(id: $id) {\\n    id\\n    title\\n    createdAt\\n  }\\n}\",\n  \"variables\": {\n    \"id\": \"{{projectId}}\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Project",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation DeleteProject($id: ID!) {\\n  deleteProject(id: $id)\\n}\",\n  \"variables\": {\n    \"id\": \"{{projectId}}\"\n  }\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Versions",
+      "item": [
+        {
+          "name": "Create Version (snapshot)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.createVersion) {",
+                  "  pm.collectionVariables.set('versionId', json.data.createVersion.id);",
+                  "  console.log('versionId saved:', json.data.createVersion.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation CreateVersion($projectId: ID!, $label: String) {\\n  createVersion(projectId: $projectId, label: $label) {\\n    id\\n    label\\n    createdAt\\n  }\\n}\",\n  \"variables\": {\n    \"projectId\": \"{{projectId}}\",\n    \"label\": \"v1 — initial snapshot\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "List Versions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"query Versions($projectId: ID!) {\\n  versions(projectId: $projectId) {\\n    id\\n    label\\n    createdAt\\n  }\\n}\",\n  \"variables\": {\n    \"projectId\": \"{{projectId}}\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Restore Version",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation RestoreVersion($projectId: ID!, $versionId: ID!) {\\n  restoreVersion(projectId: $projectId, versionId: $versionId) {\\n    id\\n    title\\n    content\\n    updatedAt\\n  }\\n}\",\n  \"variables\": {\n    \"projectId\": \"{{projectId}}\",\n    \"versionId\": \"{{versionId}}\"\n  }\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Templates",
+      "item": [
+        {
+          "name": "Base Templates",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"query {\\n  baseTemplates {\\n    id\\n    title\\n    width\\n    height\\n    content\\n    createdAt\\n  }\\n}\",\n  \"variables\": {}\n}"
+            }
+          }
+        },
+        {
+          "name": "User Templates",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"query {\\n  userTemplates {\\n    id\\n    title\\n    width\\n    height\\n    createdAt\\n    updatedAt\\n  }\\n}\",\n  \"variables\": {}\n}"
+            }
+          }
+        },
+        {
+          "name": "Create User Template",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.createUserTemplate) {",
+                  "  pm.collectionVariables.set('templateId', json.data.createUserTemplate.id);",
+                  "  console.log('templateId saved:', json.data.createUserTemplate.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation CreateUserTemplate($input: CreateUserTemplateDto!) {\\n  createUserTemplate(input: $input) {\\n    id\\n    title\\n    width\\n    height\\n    createdAt\\n  }\\n}\",\n  \"variables\": {\n    \"input\": {\n      \"title\": \"My Template\",\n      \"width\": 1200,\n      \"height\": 800,\n      \"content\": { \"shapes\": [] }\n    }\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Update User Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation UpdateUserTemplate($id: ID!, $input: UpdateUserTemplateDto!) {\\n  updateUserTemplate(id: $id, input: $input) {\\n    id\\n    title\\n    updatedAt\\n  }\\n}\",\n  \"variables\": {\n    \"id\": \"{{templateId}}\",\n    \"input\": {\n      \"title\": \"Updated Template\"\n    }\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete User Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation DeleteUserTemplate($id: ID!) {\\n  deleteUserTemplate(id: $id)\\n}\",\n  \"variables\": {\n    \"id\": \"{{templateId}}\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Project from Template",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.createProjectFromTemplate) {",
+                  "  pm.collectionVariables.set('projectId', json.data.createProjectFromTemplate.id);",
+                  "  console.log('projectId (from template) saved:', json.data.createProjectFromTemplate.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation CreateProjectFromTemplate($templateId: ID!, $title: String) {\\n  createProjectFromTemplate(templateId: $templateId, title: $title) {\\n    id\\n    title\\n    width\\n    height\\n    createdAt\\n  }\\n}\",\n  \"variables\": {\n    \"templateId\": \"{{templateId}}\",\n    \"title\": \"Project from My Template\"\n  }\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Upload / Export / Share",
+      "item": [
+        {
+          "name": "Upload Image (REST)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/upload",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "upload"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/path/to/image.png",
+                  "description": "Image file (JPEG/PNG/GIF/WEBP, max 10 MB)"
+                },
+                {
+                  "key": "projectId",
+                  "value": "{{projectId}}",
+                  "type": "text",
+                  "description": "Optional — associate upload with a project"
+                }
+              ]
+            },
+            "description": "REST endpoint. Auth via HttpOnly cookie (access_token). Returns { url, fileName, mimeType, size }."
+          }
+        },
+        {
+          "name": "Export PNG",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation ExportPng($projectId: ID!) {\\n  exportPng(projectId: $projectId) {\\n    url\\n    fileName\\n    mimeType\\n  }\\n}\",\n  \"variables\": {\n    \"projectId\": \"{{projectId}}\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Export JPG",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation ExportJpg($projectId: ID!) {\\n  exportJpg(projectId: $projectId) {\\n    url\\n    fileName\\n    mimeType\\n  }\\n}\",\n  \"variables\": {\n    \"projectId\": \"{{projectId}}\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Export PDF",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation ExportPdf($projectId: ID!) {\\n  exportPdf(projectId: $projectId) {\\n    url\\n    fileName\\n    mimeType\\n  }\\n}\",\n  \"variables\": {\n    \"projectId\": \"{{projectId}}\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Export Additional Format (SVG / WEBP)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation ExportAdditionalFormat($projectId: ID!, $format: String!) {\\n  exportAdditionalFormat(projectId: $projectId, format: $format) {\\n    url\\n    fileName\\n    mimeType\\n  }\\n}\",\n  \"variables\": {\n    \"projectId\": \"{{projectId}}\",\n    \"format\": \"webp\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Share Link",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.createShareLink) {",
+                  "  pm.collectionVariables.set('shareToken', json.data.createShareLink.token);",
+                  "  console.log('shareToken saved:', json.data.createShareLink.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation CreateShareLink($projectId: ID!, $expiresInHours: Float) {\\n  createShareLink(projectId: $projectId, expiresInHours: $expiresInHours) {\\n    token\\n    url\\n    expiresAt\\n  }\\n}\",\n  \"variables\": {\n    \"projectId\": \"{{projectId}}\",\n    \"expiresInHours\": 72\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Resolve Share Link (public)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"query ResolveShareLink($token: String!) {\\n  resolveShareLink(token: $token) {\\n    id\\n    title\\n    width\\n    height\\n    content\\n  }\\n}\",\n  \"variables\": {\n    \"token\": \"{{shareToken}}\"\n  }\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          }
+        },
+        {
+          "name": "System Status (GQL)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"query {\\n  systemStatus {\\n    api\\n    db\\n    timestamp\\n  }\\n}\",\n  \"variables\": {}\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

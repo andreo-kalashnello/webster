@@ -153,7 +153,7 @@ function HomePage() {
         <section className="relative z-10 grid gap-10 lg:grid-cols-[1.2fr_0.8fr]">
           <div>
             <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl">
-              Webster — онлайн редактор для швидких кампусних матеріалів
+              Webster — безкоштовний онлайн-редактор для швидкого створення матеріалів
             </h1>
             <p className="mt-5 max-w-xl text-lg text-slate-300">
               Збирайте афіші, оголошення та презентації за лічені хвилини.

@@ -6,21 +6,20 @@
 
 ### Что было сделано на backend (с которым работает Role 2):
 
-**Проблема:** Backend не запускался на Node.js 20 из-за несовместимостей в конфигурации.
+**Проблема:** Backend не запускался через `ts-node` с ошибкой `TS5110` (конфликт `module` и `moduleResolution`).
 
 **Решения, реализованные:**
 
 1. **`apps/backend/src/main.ts`** — модуль инициализации приложения
-   - **Удалено:** middleware `express-mongo-sanitize` (v2.2.0 несовместим с Node.js 20, выкидывает ошибку при попытке модифицировать properties запроса)
-   - **Оставлено:** helmet (безопасность), cookie-parser (для работы JWT в cookies), CORS (для связи с frontend)
+   - **Исправлено:** `express-mongo-sanitize` теперь используется безопасно через `sanitize()` для `body/params` (избегаем мутации `req.query` в Express 5)
+   - **Сохранено:** helmet (безопасность), cookie-parser (JWT в cookies), CORS (связь с frontend)
    - **Использование cookies:** JWT токены хранятся в secure httpOnly cookies, отправляются автоматически при credentials: "include" в apolloClient
    - **Запуск:** Backend слушает на `0.0.0.0:4000` (доступен для frontend контейнера)
 
 2. **`apps/backend/tsconfig.json`** — конфигурация TypeScript компилятора
-   - **Было:** `"module": "node16"` (ESM модули, несовместимы с ts-node в Node.js 20 runtime)
-   - **Стало:** `"module": "commonjs"` (стандартные CommonJS модули для Node.js)
-   - **Добавлено:** `ts-node` конфиг с `transpileOnly: true` (быстрая трансполяция при локальной разработке, без полной type-checking)
-   - **Результат:** Backend теперь стартует через `ts-node` без ошибок "Unknown file extension .ts"
+   - **Исправлено:** `moduleResolution` и `module` приведены к `Node16`
+   - **Согласовано:** override для `ts-node` использует тот же `module: "Node16"`
+   - **Результат:** устранена ошибка `TS5110`, backend корректно стартует через `ts-node`
 
 ### Что получила Role 2 на вход:
 

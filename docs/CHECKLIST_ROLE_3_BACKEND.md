@@ -21,13 +21,13 @@
 
 - [+] Создать schema User.
 - [+] Создать schema RefreshToken.
-- [ ] Создать schema Project.
-- [ ] Создать schema ProjectVersion.
-- [ ] Создать schema Template.
-- [ ] Создать schema UploadAsset.
-- [ ] Создать нужные индексы по userId/projectId/updatedAt.
-- [ ] Добавить soft delete поля там, где нужно.
-- [ ] Добавить timestamps ко всем ключевым коллекциям.
+- [+] Создать schema Project.
+- [+] Создать schema ProjectVersion.
+- [+] Создать schema Template.
+- [+] Создать schema UploadAsset.
+- [+] Создать нужные индексы по userId/projectId/updatedAt.
+- [+] Добавить soft delete поля там, где нужно.
+- [+] Добавить timestamps ко всем ключевым коллекциям.
 
 ## 3. GraphQL schema и резолверы
 
@@ -37,10 +37,10 @@
 - [+] Описать Mutation для изменения данных.
 - [+] Реализовать резолверы auth.
 - [+] Реализовать резолверы profile.
-- [ ] Реализовать резолверы projects.
-- [ ] Реализовать резолверы templates.
-- [ ] Реализовать резолверы versions.
-- [ ] Реализовать резолверы export/share.
+- [+] Реализовать резолверы projects.
+- [+] Реализовать резолверы templates.
+- [+] Реализовать резолверы versions.
+- [+] Реализовать резолверы export/share.
 
 ## 4. Auth и безопасность
 
@@ -65,72 +65,72 @@
 
 ## 5. Projects API
 
-- [ ] Реализовать createProject mutation.
-- [ ] Реализовать updateProject mutation.
-- [ ] Реализовать deleteProject mutation.
-- [ ] Реализовать project query by id.
-- [ ] Реализовать projects query list + pagination.
-- [ ] Реализовать autosaveProject mutation.
-- [ ] Реализовать cloneProject mutation.
-- [ ] Реализовать ownership проверки в сервисах.
+- [+] Реализовать createProject mutation.
+- [+] Реализовать updateProject mutation.
+- [+] Реализовать deleteProject mutation.
+- [+] Реализовать project query by id.
+- [+] Реализовать projects query list + pagination.
+- [+] Реализовать autosaveProject mutation.
+- [+] Реализовать cloneProject mutation.
+- [+] Реализовать ownership проверки в сервисах.
 
 ## 6. Versioning API
 
-- [ ] Реализовать createVersion mutation.
-- [ ] Реализовать versions query.
-- [ ] Реализовать restoreVersion mutation.
-- [ ] Реализовать лимит числа версий на проект.
-- [ ] Реализовать очистку старых версий по политике.
+- [+] Реализовать createVersion mutation.
+- [+] Реализовать versions query.
+- [+] Реализовать restoreVersion mutation.
+- [+] Реализовать лимит числа версий на проект.
+- [+] Реализовать очистку старых версий по политике.
 
 ## 7. Templates API
 
-- [ ] Реализовать baseTemplates query.
-- [ ] Реализовать userTemplates query.
-- [ ] Реализовать createUserTemplate mutation.
-- [ ] Реализовать updateUserTemplate mutation.
-- [ ] Реализовать deleteUserTemplate mutation.
-- [ ] Реализовать createProjectFromTemplate mutation.
+- [+] Реализовать baseTemplates query.
+- [+] Реализовать userTemplates query.
+- [+] Реализовать createUserTemplate mutation.
+- [+] Реализовать updateUserTemplate mutation.
+- [+] Реализовать deleteUserTemplate mutation.
+- [+] Реализовать createProjectFromTemplate mutation.
 
 ## 8. Upload/Export/Share API
 
-- [ ] Реализовать upload endpoint (GraphQL upload или REST).
-- [ ] Реализовать валидацию MIME и размера файлов.
-- [ ] Реализовать безопасное хранение путей и имен файлов.
-- [ ] Реализовать exportJpg mutation.
-- [ ] Реализовать exportPng mutation.
-- [ ] Реализовать exportPdf mutation.
-- [ ] Реализовать exportAdditionalFormat mutation.
-- [ ] Реализовать createShareLink mutation.
-- [ ] Реализовать resolveShareLink query.
+- [+] Реализовать upload endpoint (GraphQL upload или REST).
+- [+] Реализовать валидацию MIME и размера файлов.
+- [+] Реализовать безопасное хранение путей и имен файлов.
+- [+] Реализовать exportJpg mutation.
+- [+] Реализовать exportPng mutation.
+- [+] Реализовать exportPdf mutation.
+- [+] Реализовать exportAdditionalFormat mutation.
+- [+] Реализовать createShareLink mutation.
+- [+] Реализовать resolveShareLink query.
 
 ## 9. Инфраструктура и наблюдаемость
 
-- [ ] Добавить structured logging.
-- [ ] Добавить request id в логи.
+- [+] Добавить structured logging.
+- [+] Добавить request id в логи.
 - [+] Добавить логирование GraphQL ошибок.
-- [ ] Добавить метрики latency по резолверам.
-- [ ] Добавить метрики ошибок 4xx/5xx.
-- [ ] Добавить cron очистки orphan files.
+- [+] Добавить метрики latency по резолверам.
+- [+] Добавить метрики ошибок 4xx/5xx.
+- [+] Добавить cron очистки orphan files.
 
 ## 10. Тесты роли
 
 - [+] Unit-тесты auth service.
-- [ ] Unit-тесты projects service.
-- [ ] Unit-тесты templates service.
-- [ ] Unit-тесты versions service.
+- [+] Unit-тесты projects service.
+- [+] Unit-тесты templates service.
+- [+] Unit-тесты versions service.
 - [+] Integration-тесты GraphQL auth.
-- [ ] Integration-тесты GraphQL projects.
-- [ ] Integration-тесты GraphQL templates/versions.
-- [ ] Integration-тесты upload/export/share.
+- [+] Integration-тесты GraphQL projects.
+- [+] Integration-тесты GraphQL templates/versions.
+- [+] Integration-тесты upload/export/share.
 - [+] Негативные тесты валидации и авторизации.
 
 ## 11. Done-критерии роли
 
-- [ ] Все обязательные GraphQL операции реализованы.
-- [ ] MongoDB схема стабильна и индексирована.
-- [ ] Auth и ownership работают корректно.
-- [ ] Критические backend сценарии покрыты тестами.
-- [ ] API готов к интеграции с frontend без блокеров.
+- [+] Все обязательные GraphQL операции реализованы.
+- [+] MongoDB схема стабильна и индексирована.
+- [+] Auth и ownership работают корректно.
+- [+] Критические backend сценарии покрыты тестами.
+- [+] API готов к интеграции с frontend без блокеров.
 
 ## 12. Некст задания на 2 дня (backend)
 

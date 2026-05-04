@@ -1,8 +1,11 @@
 import { type CanActivate, type ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/common";
 import { GqlExecutionContext } from "@nestjs/graphql";
 import { JwtService } from "@nestjs/jwt";
+import type { Request } from "express";
 
 import { UsersService } from "../../users/users.service";
+
+type RequestWithAuth = Request & { user?: unknown; cookies: Record<string, string> };
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -12,8 +15,7 @@ export class JwtAuthGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const ctx = GqlExecutionContext.create(context);
-    const req = ctx.getContext().req;
+    const req = this.getRequest(context);
 
     const token = req.cookies?.access_token;
     if (!token) {
@@ -27,5 +29,14 @@ export class JwtAuthGuard implements CanActivate {
     } catch {
       throw new UnauthorizedException("Invalid or expired token");
     }
+  }
+
+  private getRequest(context: ExecutionContext): RequestWithAuth {
+    if (context.getType<string>() === "http") {
+      return context.switchToHttp().getRequest<RequestWithAuth>();
+    }
+
+    const ctx = GqlExecutionContext.create(context);
+    return ctx.getContext().req;
   }
 }
