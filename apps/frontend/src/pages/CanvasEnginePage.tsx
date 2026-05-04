@@ -72,6 +72,12 @@ type DragState =
       tool: "rect" | "triangle" | "image";
       startPoint: Point;
       endPoint: Point;
+    }
+  | {
+      mode: "selection-box";
+      pointerId: number;
+      startWorld: Point;
+      endWorld: Point;
     };
 
 type EngineDebugState = {
@@ -115,6 +121,13 @@ export function CanvasEnginePage() {
       cameraZoom: 1,
     };
   });
+
+  const [selectionBoxRect, setSelectionBoxRect] = useState<{
+    screenX: number;
+    screenY: number;
+    screenWidth: number;
+    screenHeight: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!canvasRef.current) {
@@ -468,14 +481,26 @@ export function CanvasEnginePage() {
       if (!event.shiftKey) {
         engine.setSelection([]);
       }
-      const camera = renderer.getCamera();
-      dragStateRef.current = {
-        mode: "pan",
-        pointerId: event.pointerId,
-        startClient: { x: event.clientX, y: event.clientY },
-        initialCameraX: camera.x,
-        initialCameraY: camera.y,
-      };
+
+      // Start selection box or pan based on Shift
+      if (event.shiftKey) {
+        const camera = renderer.getCamera();
+        dragStateRef.current = {
+          mode: "pan",
+          pointerId: event.pointerId,
+          startClient: { x: event.clientX, y: event.clientY },
+          initialCameraX: camera.x,
+          initialCameraY: camera.y,
+        };
+      } else {
+        dragStateRef.current = {
+          mode: "selection-box",
+          pointerId: event.pointerId,
+          startWorld: worldPoint,
+          endWorld: worldPoint,
+        };
+      }
+
       event.currentTarget.setPointerCapture(event.pointerId);
       return;
     }
@@ -552,6 +577,42 @@ export function CanvasEnginePage() {
       setDebug((prev) => ({
         ...prev,
         lastEvent: `viewport:pan:${Math.round(deltaX)},${Math.round(deltaY)}`,
+      }));
+      return;
+    }
+
+    if (dragState.mode === "selection-box") {
+      dragStateRef.current = {
+        ...dragState,
+        endWorld: worldPoint,
+      };
+
+      // Update selection-box visual preview
+      const camera = renderer.getCamera();
+      const screenStart = {
+        x: dragState.startWorld.x * camera.zoom + camera.x,
+        y: dragState.startWorld.y * camera.zoom + camera.y,
+      };
+      const screenEnd = {
+        x: worldPoint.x * camera.zoom + camera.x,
+        y: worldPoint.y * camera.zoom + camera.y,
+      };
+
+      const minX = Math.min(screenStart.x, screenEnd.x);
+      const minY = Math.min(screenStart.y, screenEnd.y);
+      const maxX = Math.max(screenStart.x, screenEnd.x);
+      const maxY = Math.max(screenStart.y, screenEnd.y);
+
+      setSelectionBoxRect({
+        screenX: minX,
+        screenY: minY,
+        screenWidth: maxX - minX,
+        screenHeight: maxY - minY,
+      });
+
+      setDebug((prev) => ({
+        ...prev,
+        lastEvent: `selection:box:preview`,
       }));
       return;
     }
@@ -677,6 +738,31 @@ export function CanvasEnginePage() {
         engine.setSelection([dragState.nodeId]);
         engine.setTool("select");
       }
+    }
+
+    if (dragState.mode === "selection-box") {
+      const boxBounds = buildRectBounds(dragState.startWorld, dragState.endWorld);
+      const scene = engine.getSerializableState();
+      const selectedIds: NodeId[] = [];
+
+      for (const nodeId of scene.nodeOrder) {
+        const node = scene.nodes[nodeId];
+        if (!node) continue;
+
+        const nodeBox = node.bounds;
+        const isInside =
+          nodeBox.x < boxBounds.x + boxBounds.width &&
+          nodeBox.x + nodeBox.width > boxBounds.x &&
+          nodeBox.y < boxBounds.y + boxBounds.height &&
+          nodeBox.y + nodeBox.height > boxBounds.y;
+
+        if (isInside) {
+          selectedIds.push(nodeId);
+        }
+      }
+
+      engine.setSelection(selectedIds);
+      setSelectionBoxRect(null);
     }
 
     dragStateRef.current = null;
@@ -807,6 +893,19 @@ export function CanvasEnginePage() {
         onPointerMove={handleCanvasPointerMove}
         onPointerUp={handleCanvasPointerEnd}
       />
+
+      {/* Selection box preview overlay */}
+      {selectionBoxRect && (
+        <div
+          className="pointer-events-none absolute border-2 border-blue-500 bg-blue-400/10"
+          style={{
+            left: `${selectionBoxRect.screenX}px`,
+            top: `${selectionBoxRect.screenY}px`,
+            width: `${selectionBoxRect.screenWidth}px`,
+            height: `${selectionBoxRect.screenHeight}px`,
+          }}
+        />
+      )}
 
       <div className="pointer-events-none absolute left-4 top-4 z-10">
         <div className="rounded-xl border border-slate-300 bg-white/90 px-3 py-1.5 text-xs font-medium text-slate-700 backdrop-blur-sm">
