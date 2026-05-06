@@ -64,11 +64,11 @@
 - [x] Реализовать pencil рисование path по точкам курсора.
 - [x] Реализовать text creation и text editing на double click.
 - [x] Реализовать arrow/shape drag-create по стартовой и конечной точке.
-- [ ] Реализовать shift-мультивыбор мышью.
+- [x] Реализовать shift-мультивыбор мышью.
 - [ ] Реализовать group / ungroup для выделенных элементов.
-- [ ] Реализовать move/delete группы как единого selection set.
-- [ ] Реализовать selection box для массового выделения.
-- [ ] Реализовать resize/rotate handles для выбранного объекта.
+- [x] Реализовать move/delete группы как единого selection set.
+- [x] Реализовать selection box для массового выделения.
+- [x] Реализовать resize/rotate handles для выбранного объекта.
 
 ## 5. Геометрия и трансформации
 

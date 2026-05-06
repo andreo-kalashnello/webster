@@ -10,3 +10,5 @@ coverage/
 tsconfig.tsbuildinfo
 uploads/
 exports/
+.clinerules
+.vscode/

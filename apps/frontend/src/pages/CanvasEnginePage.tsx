@@ -19,6 +19,9 @@ import {
 const ZOOM_SENSITIVITY = 0.0015;
 const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 4;
+const HANDLE_SIZE = 10;
+const ROTATE_HANDLE_OFFSET = 28;
+const ROTATE_HANDLE_RADIUS = 6;
 
 type CanvasToolUiItem = {
   id: ToolName;
@@ -26,6 +29,8 @@ type CanvasToolUiItem = {
   hint: string;
   Icon: React.ComponentType<{ className?: string }>;
 };
+
+type ResizeHandle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
 
 const TOOLBAR_TOOLS: CanvasToolUiItem[] = [
   { id: "select", label: "Select", hint: "V", Icon: MousePointer2 },
@@ -78,6 +83,22 @@ type DragState =
       pointerId: number;
       startWorld: Point;
       endWorld: Point;
+    }
+  | {
+      mode: "resize";
+      pointerId: number;
+      nodeId: NodeId;
+      handle: ResizeHandle;
+      startWorld: Point;
+      startBounds: { x: number; y: number; width: number; height: number };
+    }
+  | {
+      mode: "rotate";
+      pointerId: number;
+      nodeId: NodeId;
+      center: Point;
+      startAngle: number;
+      startRotation: number;
     };
 
 type EngineDebugState = {
@@ -475,6 +496,56 @@ export function CanvasEnginePage() {
       return;
     }
 
+    const runtime = engine.getRuntimeSnapshot();
+    const selectedNodeId = runtime.selectedNodeIds.length === 1 ? runtime.selectedNodeIds[0] : null;
+    const selectedNode = selectedNodeId ? scene.nodes[selectedNodeId] : null;
+
+    if (selectedNode) {
+      const camera = renderer.getCamera();
+      const handleSizeWorld = HANDLE_SIZE / camera.zoom;
+      const rotateOffsetWorld = ROTATE_HANDLE_OFFSET / camera.zoom;
+      const rotateRadiusWorld = ROTATE_HANDLE_RADIUS / camera.zoom;
+      const center = getRectCenter(selectedNode.bounds);
+      const rotateHandle = getRotateHandlePoint(selectedNode.bounds, rotateOffsetWorld);
+
+      if (isPointInCircle(worldPoint, rotateHandle, rotateRadiusWorld)) {
+        const startAngle = radiansToDegrees(Math.atan2(worldPoint.y - center.y, worldPoint.x - center.x));
+        dragStateRef.current = {
+          mode: "rotate",
+          pointerId: event.pointerId,
+          nodeId: selectedNode.id,
+          center,
+          startAngle,
+          startRotation: selectedNode.transform.rotate,
+        };
+
+        event.currentTarget.setPointerCapture(event.pointerId);
+        return;
+      }
+
+      if (!selectedNode.data?.points) {
+        const resizeHandle = findResizeHandleAtPoint(
+          worldPoint,
+          selectedNode.bounds,
+          handleSizeWorld,
+        );
+
+        if (resizeHandle) {
+          dragStateRef.current = {
+            mode: "resize",
+            pointerId: event.pointerId,
+            nodeId: selectedNode.id,
+            handle: resizeHandle,
+            startWorld: worldPoint,
+            startBounds: { ...selectedNode.bounds },
+          };
+
+          event.currentTarget.setPointerCapture(event.pointerId);
+          return;
+        }
+      }
+    }
+
     const hitNodeId = pickTopNodeAtPoint(scene, worldPoint);
 
     if (!hitNodeId) {
@@ -619,6 +690,42 @@ export function CanvasEnginePage() {
 
     const point = getCanvasPoint(event);
     const worldPoint = renderer.screenToWorld(point);
+
+    if (dragState.mode === "resize") {
+      const deltaX = worldPoint.x - dragState.startWorld.x;
+      const deltaY = worldPoint.y - dragState.startWorld.y;
+      const nextBounds = applyResizeHandle(dragState.startBounds, dragState.handle, deltaX, deltaY);
+
+      engine.updateNode(dragState.nodeId, (prevNode) => ({
+        ...prevNode,
+        bounds: nextBounds,
+      }));
+
+      setDebug((prev) => ({
+        ...prev,
+        lastEvent: `node:resize:${dragState.handle}`,
+      }));
+      return;
+    }
+
+    if (dragState.mode === "rotate") {
+      const angle = radiansToDegrees(Math.atan2(worldPoint.y - dragState.center.y, worldPoint.x - dragState.center.x));
+      const nextRotation = dragState.startRotation + (angle - dragState.startAngle);
+
+      engine.updateNode(dragState.nodeId, (prevNode) => ({
+        ...prevNode,
+        transform: {
+          ...prevNode.transform,
+          rotate: nextRotation,
+        },
+      }));
+
+      setDebug((prev) => ({
+        ...prev,
+        lastEvent: `node:rotate:${Math.round(nextRotation)}`,
+      }));
+      return;
+    }
 
     if (dragState.mode === "pencil") {
       const lastPoint = dragState.points[dragState.points.length - 1];
@@ -865,6 +972,19 @@ export function CanvasEnginePage() {
     }));
   }
 
+  const runtimeSnapshot = engine.getRuntimeSnapshot();
+  const selectedNodeId = runtimeSnapshot.selectedNodeIds.length === 1 ? runtimeSnapshot.selectedNodeIds[0] : null;
+  const selectedNode = selectedNodeId ? engine.getSerializableState().nodes[selectedNodeId] : null;
+  const showHandles = debug.activeTool === "select" && Boolean(selectedNode);
+  const camera = { x: debug.cameraX, y: debug.cameraY, zoom: debug.cameraZoom };
+  const resizeHandles =
+    showHandles && selectedNode && !selectedNode.data?.points
+      ? getResizeHandles(selectedNode.bounds)
+      : [];
+  const rotateHandle = showHandles && selectedNode
+    ? getRotateHandlePoint(selectedNode.bounds, ROTATE_HANDLE_OFFSET / camera.zoom)
+    : null;
+
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-slate-100 font-sans">
       <div className="absolute inset-0 bg-[radial-gradient(#cbd5e1_2px,transparent_2px)] bg-size-[16px_16px]" />
@@ -905,6 +1025,42 @@ export function CanvasEnginePage() {
             height: `${selectionBoxRect.screenHeight}px`,
           }}
         />
+      )}
+
+      {showHandles && (
+        <div className="pointer-events-none absolute inset-0 z-10">
+          {rotateHandle && (
+            <div
+              className="absolute rounded-full border-2 border-emerald-300 bg-slate-950"
+              style={(() => {
+                const screen = worldToScreen(rotateHandle, camera);
+                const size = ROTATE_HANDLE_RADIUS * 2;
+                return {
+                  left: `${screen.x - size / 2}px`,
+                  top: `${screen.y - size / 2}px`,
+                  width: `${size}px`,
+                  height: `${size}px`,
+                };
+              })()}
+            />
+          )}
+          {resizeHandles.map((handle) => {
+            const screen = worldToScreen(handle, camera);
+            const size = HANDLE_SIZE;
+            return (
+              <div
+                key={handle.id}
+                className="absolute rounded-sm border border-slate-200 bg-slate-900"
+                style={{
+                  left: `${screen.x - size / 2}px`,
+                  top: `${screen.y - size / 2}px`,
+                  width: `${size}px`,
+                  height: `${size}px`,
+                }}
+              />
+            );
+          })}
+        </div>
       )}
 
       <div className="pointer-events-none absolute left-4 top-4 z-10">
@@ -1046,6 +1202,117 @@ function distance(first: Point, second: Point): number {
   const dx = second.x - first.x;
   const dy = second.y - first.y;
   return Math.sqrt(dx * dx + dy * dy);
+}
+
+function radiansToDegrees(value: number): number {
+  return (value * 180) / Math.PI;
+}
+
+function getRectCenter(bounds: { x: number; y: number; width: number; height: number }): Point {
+  return {
+    x: bounds.x + bounds.width / 2,
+    y: bounds.y + bounds.height / 2,
+  };
+}
+
+function getRotateHandlePoint(
+  bounds: { x: number; y: number; width: number; height: number },
+  offset: number,
+): Point {
+  return {
+    x: bounds.x + bounds.width / 2,
+    y: bounds.y - offset,
+  };
+}
+
+function getResizeHandles(bounds: { x: number; y: number; width: number; height: number }): Array<{ id: ResizeHandle; x: number; y: number }> {
+  const { x, y, width, height } = bounds;
+  const cx = x + width / 2;
+  const cy = y + height / 2;
+
+  return [
+    { id: "nw", x, y },
+    { id: "n", x: cx, y },
+    { id: "ne", x: x + width, y },
+    { id: "e", x: x + width, y: cy },
+    { id: "se", x: x + width, y: y + height },
+    { id: "s", x: cx, y: y + height },
+    { id: "sw", x, y: y + height },
+    { id: "w", x, y: cy },
+  ];
+}
+
+function findResizeHandleAtPoint(
+  point: Point,
+  bounds: { x: number; y: number; width: number; height: number },
+  size: number,
+): ResizeHandle | null {
+  const half = size / 2;
+  const handles = getResizeHandles(bounds);
+
+  for (const handle of handles) {
+    if (
+      point.x >= handle.x - half &&
+      point.x <= handle.x + half &&
+      point.y >= handle.y - half &&
+      point.y <= handle.y + half
+    ) {
+      return handle.id;
+    }
+  }
+
+  return null;
+}
+
+function applyResizeHandle(
+  bounds: { x: number; y: number; width: number; height: number },
+  handle: ResizeHandle,
+  deltaX: number,
+  deltaY: number,
+): { x: number; y: number; width: number; height: number } {
+  const minSize = 12;
+  let nextX = bounds.x;
+  let nextY = bounds.y;
+  let nextWidth = bounds.width;
+  let nextHeight = bounds.height;
+
+  if (handle.includes("e")) {
+    nextWidth = Math.max(minSize, bounds.width + deltaX);
+  }
+
+  if (handle.includes("s")) {
+    nextHeight = Math.max(minSize, bounds.height + deltaY);
+  }
+
+  if (handle.includes("w")) {
+    nextWidth = Math.max(minSize, bounds.width - deltaX);
+    nextX = bounds.x + (bounds.width - nextWidth);
+  }
+
+  if (handle.includes("n")) {
+    nextHeight = Math.max(minSize, bounds.height - deltaY);
+    nextY = bounds.y + (bounds.height - nextHeight);
+  }
+
+  return {
+    x: nextX,
+    y: nextY,
+    width: nextWidth,
+    height: nextHeight,
+  };
+}
+
+function isPointInCircle(point: Point, center: Point, radius: number): boolean {
+  const dx = point.x - center.x;
+  const dy = point.y - center.y;
+  return dx * dx + dy * dy <= radius * radius;
+}
+
+function worldToScreen(point: Point, camera: { x: number; y: number; zoom: number }): Point {
+  return {
+    x: point.x * camera.zoom + camera.x,
+    y: point.y * camera.zoom + camera.y,
+  };
 }
 
 function getGroupedNodeIds(scene: SerializableSceneState, nodeIds: NodeId[]): NodeId[] {

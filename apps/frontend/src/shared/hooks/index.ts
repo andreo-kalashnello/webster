@@ -6,3 +6,5 @@ export {
   usePropertiesPanel,
   usePropertiesPanelActions,
 } from "./useEditorShortcuts";
+
+export { useAuthBootstrap } from "./useAuthBootstrap";

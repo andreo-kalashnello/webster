@@ -1,14 +1,15 @@
 import { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
-import { useQuery } from "@apollo/client/react";
-import { GET_CURRENT_USER } from "../graphql/auth.graphql";
+
+import { useAuthStore } from "../shared/stores/auth.store";
 
 interface PrivateRouteProps {
   children: ReactNode;
 }
 
 export function PrivateRoute({ children }: PrivateRouteProps) {
-  const { loading, error, data } = useQuery(GET_CURRENT_USER);
+  const user = useAuthStore((state) => state.user);
+  const loading = useAuthStore((state) => state.loading);
 
   if (loading) {
     return (
@@ -21,7 +22,7 @@ export function PrivateRoute({ children }: PrivateRouteProps) {
     );
   }
 
-  if (error || !data?.me) {
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
 

@@ -7,11 +7,13 @@ import {
   CHANGE_PASSWORD_MUTATION,
   UPDATE_PROFILE_MUTATION,
 } from "../graphql/auth.graphql";
+import { useAuthStore } from "../shared/stores/auth.store";
 
 type Modal = "edit" | "password" | null;
 
 export function ProfilePage() {
   const navigate = useNavigate();
+  const clearUser = useAuthStore((state) => state.clearUser);
   const { data, loading, error } = useQuery(GET_CURRENT_USER);
   const [modal, setModal] = useState<Modal>(null);
   const [editError, setEditError] = useState("");
@@ -21,6 +23,7 @@ export function ProfilePage() {
 
   const [logout] = useMutation(LOGOUT_MUTATION, {
     onCompleted: () => {
+      clearUser();
       navigate("/login", { replace: true });
     },
   });
