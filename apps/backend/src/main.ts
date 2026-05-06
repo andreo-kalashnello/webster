@@ -3,12 +3,14 @@ import "reflect-metadata";
 import { Logger, ValidationPipe } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { NestFactory } from "@nestjs/core";
-import cookieParser from "cookie-parser";
+// import cookieParser from "cookie-parser";
 import express from "express";
 import mongoSanitize from "express-mongo-sanitize";
 import helmet from "helmet";
 import { WINSTON_MODULE_NEST_PROVIDER } from "nest-winston";
 import { join } from "node:path";
+
+const cookieParser = require("cookie-parser");
 
 import { AppModule } from "./app.module";
 import { HttpExceptionFilter } from "./infra/common/filters/http-exception.filter";
