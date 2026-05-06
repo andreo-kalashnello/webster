@@ -1,6 +1,23 @@
 import type { CanvasEngine } from "../core/create-engine";
 import type { Point, Rect } from "../core/types";
 import type { SceneNode } from "../scene/scene-node";
+import { getNodeWorldBounds } from "../utils/mat2d";
+import { getSelectionWorldBounds } from "../utils/hit-test";
+
+// Per-frame cache: avoids recomputing the local→world matrix multiple times per node per frame.
+const frameWorldBoundsCache = new WeakMap<SceneNode, Rect>();
+
+function getCachedWorldBounds(node: SceneNode): Rect {
+  const cached = frameWorldBoundsCache.get(node);
+  if (cached) return cached;
+  const bounds = getNodeWorldBounds(node);
+  frameWorldBoundsCache.set(node, bounds);
+  return bounds;
+}
+
+function clearFrameCache(): void {
+  // WeakMap GC handles cleanup automatically; this is a no-op sentinel kept for clarity.
+}
 
 export type RenderMode = "full-redraw" | "dirty-rect";
 
@@ -148,9 +165,10 @@ export class CanvasRenderer {
       this.ctx.restore();
     }
 
+    clearFrameCache();
     this.lastNodeBounds.clear();
     for (const node of nodes) {
-      this.lastNodeBounds.set(node.id, { ...node.bounds });
+      this.lastNodeBounds.set(node.id, getCachedWorldBounds(node));
     }
 
     this.latestStats = {
@@ -220,7 +238,7 @@ export class CanvasRenderer {
     let maxY = Number.NEGATIVE_INFINITY;
 
     for (const id of dirtyNodeIds) {
-      const nextBounds = nodes[id]?.bounds;
+      const nextBounds = nodes[id] ? getCachedWorldBounds(nodes[id]) : undefined;
       const prevBounds = this.lastNodeBounds.get(id);
       const bounds = nextBounds ?? prevBounds;
 
@@ -276,7 +294,27 @@ export class CanvasRenderer {
       this.ctx.clip();
     }
 
+    // Compute screen viewport in world coordinates for culling.
+    const { x: cx, y: cy, zoom } = this.camera;
+    const vw = this.viewport.width;
+    const vh = this.viewport.height;
+    // Screen corners → world coords: wx = (sx - cx) / zoom
+    const cullLeft   = (-cx) / zoom - 4;
+    const cullTop    = (-cy) / zoom - 4;
+    const cullRight  = (vw - cx) / zoom + 4;
+    const cullBottom = (vh - cy) / zoom + 4;
+
     for (const node of nodes) {
+      // Viewport cull: skip nodes whose world AABB is entirely outside the screen.
+      const wb = getCachedWorldBounds(node);
+      if (
+        wb.x + wb.width  < cullLeft  ||
+        wb.x             > cullRight ||
+        wb.y + wb.height < cullTop   ||
+        wb.y             > cullBottom
+      ) {
+        continue;
+      }
       this.drawNode(node);
     }
 
@@ -416,13 +454,9 @@ export class CanvasRenderer {
       this.ctx.clip();
     }
 
-    for (const id of selectedNodeIds) {
-      const node = nodes[id];
-      if (!node) {
-        continue;
-      }
-
-      const { x, y, width, height } = node.bounds;
+    const selectionBounds = getSelectionWorldBounds({ nodes }, selectedNodeIds);
+    if (selectionBounds) {
+      const { x, y, width, height } = selectionBounds;
       this.ctx.strokeRect(x - 4, y - 4, width + 8, height + 8);
     }
 

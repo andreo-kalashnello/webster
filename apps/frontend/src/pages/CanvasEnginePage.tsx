@@ -8,6 +8,12 @@ import {
   createIdentityTransform,
   createCanvasEngine,
   createEmptySerializableSceneState,
+  createStressScene,
+  getNodeWorldBounds,
+  hitTestNodeAtWorldPoint,
+  pickTopMostNodeAtWorldPoint,
+  deserializeSceneFromJson,
+  serializeSceneToJson,
   type RenderMode,
   type NodeId,
   type Point,
@@ -210,6 +216,11 @@ export function CanvasEnginePage() {
 
   useEffect(() => {
     const stopTool = engine.events.on("tool:changed", ({ tool }) => {
+      setDebug((prev) => ({
+        ...prev,
+        activeTool: tool,
+        lastEvent: `tool:changed:${tool}`,
+      }));
     });
 
     const stopSelection = engine.events.on("selection:changed", ({ selectedNodeIds }) => {
@@ -234,6 +245,7 @@ export function CanvasEnginePage() {
     return () => {
       stopTool();
       stopSelection();
+      stopScene();
     };
   }, [engine]);
 
@@ -252,14 +264,37 @@ export function CanvasEnginePage() {
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent): void {
-      if (!canvasInteractionActiveRef.current) {
+      const hasModifier = event.metaKey || event.ctrlKey;
+      const key = event.key.toLowerCase();
+      const isUndoRedo = hasModifier && (key === "z" || key === "y");
+      const isSceneJsonShortcut = hasModifier && event.shiftKey && (key === "s" || key === "o");
+
+      // Allow core shortcuts even before first canvas interaction.
+      if (!canvasInteractionActiveRef.current && !isUndoRedo && !isSceneJsonShortcut) {
         return;
       }
 
       const runtime = engine.getRuntimeSnapshot();
       const selectedNodeIds = runtime.selectedNodeIds;
       const hasSelection = selectedNodeIds.length > 0;
-      const hasModifier = event.metaKey || event.ctrlKey;
+
+      if (hasModifier && event.key.toLowerCase() === "z") {
+        event.preventDefault();
+        console.debug("[canvas] undo/redo hotkey", { key: event.key, shift: event.shiftKey, canUndo: engine.canUndo(), canRedo: engine.canRedo() });
+        if (event.shiftKey) {
+          engine.redo();
+        } else {
+          engine.undo();
+        }
+        return;
+      }
+
+      if (hasModifier && event.key.toLowerCase() === "y") {
+        event.preventDefault();
+        console.debug("[canvas] redo hotkey", { key: event.key, canUndo: engine.canUndo(), canRedo: engine.canRedo() });
+        engine.redo();
+        return;
+      }
 
       if ((event.key === "Delete" || event.key === "Backspace") && hasSelection) {
         event.preventDefault();
@@ -267,7 +302,7 @@ export function CanvasEnginePage() {
           for (const nodeId of selectedNodeIds) {
             removeNode(nodeId);
           }
-        });
+        }, { history: { label: "delete-selection" } });
         engine.setSelection([]);
         return;
       }
@@ -285,7 +320,7 @@ export function CanvasEnginePage() {
               },
             }));
           }
-        });
+        }, { history: { label: "group", mergeKey: `group:${groupId}` } });
         return;
       }
 
@@ -313,6 +348,41 @@ export function CanvasEnginePage() {
         if (debug.activeTool === "select") {
           handleReplaceScene();
         }
+        return;
+      }
+
+      // Stress test: Ctrl/Cmd+Alt+1/2/3 → 100/500/1000 nodes
+      if (hasModifier && event.altKey) {
+        const stressMap: Record<string, number> = { "1": 100, "2": 500, "3": 1000 };
+        const count = stressMap[event.key];
+        if (count !== undefined) {
+          event.preventDefault();
+          console.debug(`[canvas] stress scene: ${count} nodes`);
+          engine.replaceScene(createStressScene(count));
+          engine.setSelection([]);
+          return;
+        }
+      }
+
+      if (hasModifier && event.shiftKey && event.key.toLowerCase() === "s") {
+        event.preventDefault();
+        console.debug("[canvas] export scene json → download file");
+        downloadSceneJson(serializeSceneToJson(engine.getSerializableState()));
+        return;
+      }
+
+      if (hasModifier && event.shiftKey && event.key.toLowerCase() === "o") {
+        event.preventDefault();
+        console.debug("[canvas] import scene json ← pick file");
+        pickSceneJsonFile((json) => {
+          const result = deserializeSceneFromJson(json);
+          if (!result.ok) {
+            window.alert(`Import failed: ${result.error}`);
+            return;
+          }
+          engine.replaceScene(result.scene, { history: { label: "import-scene" } });
+          engine.setSelection([]);
+        });
         return;
       }
 
@@ -350,7 +420,7 @@ export function CanvasEnginePage() {
               },
             }));
           }
-        });
+        }, { history: { label: "nudge", mergeKey: `nudge:${selectedNodeIds.sort().join(",")}` } });
       }
     }
 
@@ -636,6 +706,9 @@ export function CanvasEnginePage() {
       return;
     }
 
+    const point = getCanvasPoint(event);
+    const worldPoint = renderer.screenToWorld(point);
+
     if (dragState.mode === "pan") {
       const deltaX = event.clientX - dragState.startClient.x;
       const deltaY = event.clientY - dragState.startClient.y;
@@ -688,9 +761,6 @@ export function CanvasEnginePage() {
       return;
     }
 
-    const point = getCanvasPoint(event);
-    const worldPoint = renderer.screenToWorld(point);
-
     if (dragState.mode === "resize") {
       const deltaX = worldPoint.x - dragState.startWorld.x;
       const deltaY = worldPoint.y - dragState.startWorld.y;
@@ -699,7 +769,7 @@ export function CanvasEnginePage() {
       engine.updateNode(dragState.nodeId, (prevNode) => ({
         ...prevNode,
         bounds: nextBounds,
-      }));
+      }), { history: { label: "resize", mergeKey: `resize:${dragState.nodeId}` } });
 
       setDebug((prev) => ({
         ...prev,
@@ -718,7 +788,7 @@ export function CanvasEnginePage() {
           ...prevNode.transform,
           rotate: nextRotation,
         },
-      }));
+      }), { history: { label: "rotate", mergeKey: `rotate:${dragState.nodeId}` } });
 
       setDebug((prev) => ({
         ...prev,
@@ -746,7 +816,7 @@ export function CanvasEnginePage() {
           ...(prevNode.data ?? {}),
           points: nextPoints,
         },
-      }));
+      }), { history: { label: "draw", mergeKey: `draw:${dragState.nodeId}` } });
       return;
     }
 
@@ -763,7 +833,7 @@ export function CanvasEnginePage() {
           ...(prevNode.data ?? {}),
           points: [dragState.startPoint, worldPoint],
         },
-      }));
+      }), { history: { label: "arrow", mergeKey: `arrow:${dragState.nodeId}` } });
       return;
     }
 
@@ -776,7 +846,7 @@ export function CanvasEnginePage() {
       engine.updateNode(dragState.nodeId, (prevNode) => ({
         ...prevNode,
         bounds: buildRectBounds(dragState.startPoint, worldPoint),
-      }));
+      }), { history: { label: "shape", mergeKey: `shape:${dragState.nodeId}` } });
       return;
     }
 
@@ -810,7 +880,7 @@ export function CanvasEnginePage() {
               : prevNode.data,
           }));
         }
-      });
+      }, { history: { label: "move", mergeKey: `move:${dragState.nodeIds.slice().sort().join(",")}` } });
     }
   }
 
@@ -825,7 +895,6 @@ export function CanvasEnginePage() {
         engine.removeNode(dragState.nodeId);
       } else {
         engine.setSelection([dragState.nodeId]);
-        engine.setTool("select");
       }
     }
 
@@ -834,7 +903,6 @@ export function CanvasEnginePage() {
         engine.removeNode(dragState.nodeId);
       } else {
         engine.setSelection([dragState.nodeId]);
-        engine.setTool("select");
       }
     }
 
@@ -843,7 +911,6 @@ export function CanvasEnginePage() {
         engine.removeNode(dragState.nodeId);
       } else {
         engine.setSelection([dragState.nodeId]);
-        engine.setTool("select");
       }
     }
 
@@ -856,7 +923,7 @@ export function CanvasEnginePage() {
         const node = scene.nodes[nodeId];
         if (!node) continue;
 
-        const nodeBox = node.bounds;
+        const nodeBox = getNodeWorldBounds(node);
         const isInside =
           nodeBox.x < boxBounds.x + boxBounds.width &&
           nodeBox.x + nodeBox.width > boxBounds.x &&
@@ -1063,9 +1130,14 @@ export function CanvasEnginePage() {
         </div>
       )}
 
-      <div className="pointer-events-none absolute left-4 top-4 z-10">
+      <div className="pointer-events-none absolute left-4 top-4 z-10 flex flex-col gap-1.5">
         <div className="rounded-xl border border-slate-300 bg-white/90 px-3 py-1.5 text-xs font-medium text-slate-700 backdrop-blur-sm">
-          {debug.cameraZoom.toFixed(2)}x | {debug.selectedCount} selected
+          {debug.cameraZoom.toFixed(2)}x · {debug.selectedCount} sel · {debug.nodeCount} nodes
+        </div>
+        <div className="rounded-xl border border-slate-300 bg-white/90 px-3 py-1.5 text-xs font-mono text-slate-600 backdrop-blur-sm">
+          {debug.frameTimeMs > 0
+            ? `${Math.round(Math.min(1000 / debug.frameTimeMs, 999))} fps · ${debug.frameTimeMs.toFixed(1)}ms · ${debug.renderedNodes} drawn`
+            : "—"}
         </div>
       </div>
 
@@ -1131,6 +1203,43 @@ function duplicateSelection(
   if (duplicates.length > 0) {
     engine.setSelection(duplicates);
   }
+}
+
+function downloadSceneJson(json: string): void {
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `canvas-scene-${Date.now()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function pickSceneJsonFile(onLoad: (json: string) => void): void {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".json,application/json";
+  input.style.display = "none";
+  document.body.appendChild(input);
+  input.addEventListener("change", () => {
+    const file = input.files?.[0];
+    if (!file) {
+      document.body.removeChild(input);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result;
+      document.body.removeChild(input);
+      if (typeof text === "string") {
+        onLoad(text);
+      }
+    };
+    reader.readAsText(file);
+  });
+  input.click();
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -1358,25 +1467,13 @@ function getCanvasPointFromClient(
 }
 
 function pickTopNodeAtPoint(scene: SerializableSceneState, point: Point): NodeId | null {
-  for (let index = scene.nodeOrder.length - 1; index >= 0; index -= 1) {
-    const nodeId = scene.nodeOrder[index];
-    const node = scene.nodes[nodeId];
-    if (!node) {
-      continue;
-    }
-
-    if (isPointInsideNodeBounds(point, node)) {
-      return nodeId;
-    }
-  }
-
-  return null;
+  return pickTopMostNodeAtWorldPoint(scene, point) as NodeId | null;
 }
 
 function isPointInsideNodeBounds(point: Point, node: SceneNode): boolean {
-  const { x, y, width, height } = node.bounds;
-
-  return point.x >= x && point.x <= x + width && point.y >= y && point.y <= y + height;
+  // Backwards compatible alias. Real logic moved into engine hit-test utilities.
+  // Still used by some call-sites in this file.
+  return hitTestNodeAtWorldPoint(node, point);
 }
 
 function getSceneCounters(engine: ReturnType<typeof createCanvasEngine>): {

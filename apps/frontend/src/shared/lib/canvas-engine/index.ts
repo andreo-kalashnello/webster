@@ -14,6 +14,36 @@ export { type Command } from "./commands";
 export { CanvasRenderer, type RenderMode, type RenderStats, type RendererViewport } from "./renderer";
 export { type SceneNode, type SceneNodeData, type SceneNodeStyle, type SceneNodeType } from "./scene/scene-node";
 export {
+  type Mat2D,
+  applyMat2DToPoint,
+  composeMat2D,
+  composeNodeLocalToWorldMatrix,
+  createIdentityMat2D,
+  decomposeMat2D,
+  getAabbOfPoints,
+  getDefaultNodePivot,
+  getNodeWorldBounds,
+  getNodeWorldHitbox,
+  getRectCorners,
+  invertMat2D,
+  isPointInConvexPolygon,
+  isPointInNodeHitbox,
+  multiplyMat2D,
+  rotateMat2D,
+  rotateTransformAroundPivot,
+  scaleMat2D,
+  scaleTransformAroundAnchor,
+  translateMat2D,
+} from "./utils/mat2d";
+export {
+  getNodeDefaultPivotWorld,
+  getSelectionWorldBounds,
+  hitTestNodeAtWorldPoint,
+  pickTopMostNodeAtWorldPoint,
+  unionRects,
+  worldPointToNodeLocalPoint,
+} from "./utils/hit-test";
+export {
   SceneModel,
   createImmutableSceneSnapshot,
   createSceneModel,
@@ -29,5 +59,13 @@ export {
   type RuntimeSceneState,
   type SerializableSceneState,
 } from "./scene/scene-state";
+export {
+  SCENE_FORMAT_VERSION,
+  deserializeSceneFromJson,
+  serializeSceneToJson,
+  type DeserializeResult,
+} from "./scene/serialization";
 export { ENGINE_TOOLS, type ToolDescriptor } from "./tools";
 export { createLayerId, createNodeId } from "./utils/id";
+export { createStressScene } from "./utils/stress";
+export { useEngineApi, useEngineScene, useEngineSelection } from "./react/useEngineApi";

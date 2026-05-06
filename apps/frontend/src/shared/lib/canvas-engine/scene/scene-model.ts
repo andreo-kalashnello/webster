@@ -9,6 +9,7 @@ export interface SceneBatchOperations {
   addNode: (node: SceneNode, options?: { index?: number }) => void;
   removeNode: (nodeId: NodeId) => void;
   updateNode: (nodeId: NodeId, updater: SceneNodeUpdater) => void;
+  reorderNode: (nodeId: NodeId, nextIndex: number) => void;
 }
 
 export interface SceneModelSnapshot {
@@ -167,6 +168,21 @@ export class SceneModel {
         this.ensureLayer(nextNode.layerId);
         dirtyNodeIds.add(nodeId);
       },
+      reorderNode: (nodeId, nextIndex) => {
+        const existingIndex = this.nodeOrder.indexOf(nodeId);
+        if (existingIndex === -1) {
+          return;
+        }
+
+        const safeIndex = Math.max(0, Math.min(Math.floor(nextIndex), this.nodeOrder.length - 1));
+        if (safeIndex === existingIndex) {
+          return;
+        }
+
+        this.nodeOrder.splice(existingIndex, 1);
+        this.nodeOrder.splice(safeIndex, 0, nodeId);
+        dirtyNodeIds.add(nodeId);
+      },
     };
 
     transaction(ops);
@@ -177,6 +193,48 @@ export class SceneModel {
     }
 
     return [...dirtyNodeIds];
+  }
+
+  reorderNode(nodeId: NodeId, nextIndex: number): NodeId[] {
+    const existingIndex = this.nodeOrder.indexOf(nodeId);
+    if (existingIndex === -1) {
+      return [];
+    }
+
+    const safeIndex = Math.max(0, Math.min(Math.floor(nextIndex), this.nodeOrder.length - 1));
+    if (safeIndex === existingIndex) {
+      return [];
+    }
+
+    this.nodeOrder.splice(existingIndex, 1);
+    this.nodeOrder.splice(safeIndex, 0, nodeId);
+    this.bumpVersion();
+    this.invalidateSnapshotCache();
+
+    return [nodeId];
+  }
+
+  reorderLayer(layerId: LayerId, nextIndex: number): LayerId[] {
+    if (!this.layerOrder.includes(layerId)) {
+      return [];
+    }
+
+    if (layerId === DEFAULT_LAYER_ID) {
+      return [];
+    }
+
+    const existingIndex = this.layerOrder.indexOf(layerId);
+    const safeIndex = Math.max(0, Math.min(Math.floor(nextIndex), this.layerOrder.length - 1));
+    if (safeIndex === existingIndex) {
+      return [];
+    }
+
+    this.layerOrder.splice(existingIndex, 1);
+    this.layerOrder.splice(safeIndex, 0, layerId);
+    this.bumpVersion();
+    this.invalidateSnapshotCache();
+
+    return [layerId];
   }
 
   getSnapshot(): SceneModelSnapshot {
