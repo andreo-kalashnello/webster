@@ -37,3 +37,13 @@ export const CREATE_PROJECT_FROM_TEMPLATE_MUTATION = gql`
     }
   }
 `;
+
+export const CREATE_USER_TEMPLATE_MUTATION = gql`
+  mutation CreateUserTemplate($input: CreateUserTemplateDto!) {
+    createUserTemplate(input: $input) {
+      id
+      title
+      updatedAt
+    }
+  }
+`;

@@ -11,6 +11,14 @@ export const ENGINE_TOOLS: ToolDescriptor[] = [
   { id: "pencil", label: "Pencil" },
   { id: "rect", label: "Rect" },
   { id: "triangle", label: "Triangle" },
+  { id: "ellipse", label: "Ellipse" },
   { id: "arrow", label: "Arrow" },
   { id: "image", label: "Image" },
+];
+
+/** Tools shown under the “Shapes” menu in the editor dock. */
+export const ENGINE_SHAPE_TOOLS: ToolDescriptor[] = [
+  { id: "rect", label: "Rectangle" },
+  { id: "triangle", label: "Triangle" },
+  { id: "ellipse", label: "Ellipse" },
 ];

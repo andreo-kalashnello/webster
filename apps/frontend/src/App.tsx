@@ -203,7 +203,7 @@ function HomePage() {
               <div className="mt-8 flex flex-wrap gap-4">
                 <Link
                   className="rounded-full bg-emerald-400 px-6 py-3 font-semibold text-slate-900 transition hover:bg-emerald-300"
-                  to="/editor"
+                  to="/projects?new=1"
                 >
                   New project
                 </Link>

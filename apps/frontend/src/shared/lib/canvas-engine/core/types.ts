@@ -1,7 +1,15 @@
 export type NodeId = string;
 export type LayerId = string;
 
-export type ToolName = "select" | "text" | "pencil" | "rect" | "triangle" | "arrow" | "image";
+export type ToolName =
+  | "select"
+  | "text"
+  | "pencil"
+  | "rect"
+  | "triangle"
+  | "ellipse"
+  | "arrow"
+  | "image";
 
 export interface Point {
   x: number;

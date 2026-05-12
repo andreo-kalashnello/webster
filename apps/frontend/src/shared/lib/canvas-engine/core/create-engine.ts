@@ -22,7 +22,10 @@ export interface CanvasEngine {
   events: EngineEventBus;
   getSerializableState(): SerializableSceneState;
   getRuntimeSnapshot(): EngineRuntimeSnapshot;
-  replaceScene(nextScene: SerializableSceneState, options?: { history?: HistoryOptions }): void;
+  replaceScene(
+    nextScene: SerializableSceneState,
+    options?: { history?: HistoryOptions; recordHistory?: boolean },
+  ): void;
   addNode(node: SceneNode, options?: { index?: number; history?: HistoryOptions }): void;
   removeNode(nodeId: NodeId): void;
   updateNode(nodeId: NodeId, updater: SceneNodeUpdater, options?: { history?: HistoryOptions }): void;
@@ -154,22 +157,22 @@ export function createCanvasEngine(
     }
 
     const before = runtime.sceneModel.getSerializableState();
+    const beforeJson = serializeSceneToJson(before);
     apply();
     const after = runtime.sceneModel.getSerializableState();
-    if (before.version === after.version) {
-      return;
+    const afterJson = serializeSceneToJson(after);
+    if (beforeJson !== afterJson) {
+      pushHistoryEntry({
+        command: makeSceneSnapshotCommand({
+          id: `scene:${reason}`,
+          label: history?.label ?? reason,
+          before,
+          after,
+        }),
+        timestampMs: Date.now(),
+        mergeKey: history?.mergeKey,
+      });
     }
-
-    pushHistoryEntry({
-      command: makeSceneSnapshotCommand({
-        id: `scene:${reason}`,
-        label: history?.label ?? reason,
-        before,
-        after,
-      }),
-      timestampMs: Date.now(),
-      mergeKey: history?.mergeKey,
-    });
 
     emitSceneChanged(reason);
   }
@@ -190,7 +193,18 @@ export function createCanvasEngine(
         dirtyNodeIds: [...runtime.dirtyNodeIds],
       };
     },
-    replaceScene(nextScene: SerializableSceneState, options?: { history?: HistoryOptions }): void {
+    replaceScene(
+      nextScene: SerializableSceneState,
+      options?: { history?: HistoryOptions; recordHistory?: boolean },
+    ): void {
+      if (options?.recordHistory === false) {
+        undoStack.length = 0;
+        redoStack.length = 0;
+        applyScene(nextScene);
+        emitSceneChanged("replace-scene");
+        return;
+      }
+
       commitSceneCommand(
         "replace-scene",
         () => {

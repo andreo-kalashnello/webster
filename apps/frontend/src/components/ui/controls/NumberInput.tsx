@@ -4,7 +4,7 @@ interface NumberInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "
   label?: string;
   min?: number;
   max?: number;
-  step?: number;
+  step?: number | string;
   unit?: string;
 }
 

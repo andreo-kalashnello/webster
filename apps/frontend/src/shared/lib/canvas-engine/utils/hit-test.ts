@@ -55,6 +55,20 @@ export function worldPointToNodeLocalPoint(node: SceneNode, worldPoint: Point): 
   return applyMat2DToPoint(inv, worldPoint);
 }
 
+function isPointInEllipseLocal(point: Point, rect: Rect): boolean {
+  const { x, y, width, height } = rect;
+  if (width <= 0 || height <= 0) {
+    return false;
+  }
+  const cx = x + width / 2;
+  const cy = y + height / 2;
+  const rx = width / 2;
+  const ry = height / 2;
+  const nx = (point.x - cx) / rx;
+  const ny = (point.y - cy) / ry;
+  return nx * nx + ny * ny <= 1 + 1e-9;
+}
+
 export function hitTestNodeAtWorldPoint(node: SceneNode, worldPoint: Point): boolean {
   // Fast reject via world AABB.
   const worldBounds = getNodeWorldBounds(node);
@@ -75,6 +89,9 @@ export function hitTestNodeAtWorldPoint(node: SceneNode, worldPoint: Point): boo
   const localBounds = node.bounds;
 
   switch (node.type) {
+    case "ellipse": {
+      return isPointInEllipseLocal(localPoint, localBounds);
+    }
     case "rect":
     case "image":
     case "text": {

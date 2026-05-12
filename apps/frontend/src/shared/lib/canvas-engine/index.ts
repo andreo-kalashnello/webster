@@ -65,7 +65,7 @@ export {
   serializeSceneToJson,
   type DeserializeResult,
 } from "./scene/serialization";
-export { ENGINE_TOOLS, type ToolDescriptor } from "./tools";
+export { ENGINE_TOOLS, ENGINE_SHAPE_TOOLS, type ToolDescriptor } from "./tools";
 export { createLayerId, createNodeId } from "./utils/id";
 export { createStressScene } from "./utils/stress";
 export { useEngineApi, useEngineScene, useEngineSelection } from "./react/useEngineApi";

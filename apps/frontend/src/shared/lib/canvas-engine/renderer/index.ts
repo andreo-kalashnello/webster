@@ -65,6 +65,9 @@ export class CanvasRenderer {
 
   private latestStats: RenderStats = { mode: "full-redraw", frameTimeMs: 0, renderedNodes: 0 };
   private lastNodeBounds = new Map<string, Rect>();
+  /** Loaded bitmaps / external images keyed by `data.src`. */
+  private readonly imageElementsBySrc = new Map<string, HTMLImageElement>();
+  private readonly imageLoadFailedSrc = new Set<string>();
 
   constructor(options: RendererOptions) {
     this.canvas = options.canvas;
@@ -354,6 +357,53 @@ export class CanvasRenderer {
         this.ctx.closePath();
         this.ctx.fill();
         this.ctx.stroke();
+        break;
+      }
+      case "ellipse": {
+        const cx = x + width / 2;
+        const cy = y + height / 2;
+        const rx = Math.max(0.5, width / 2);
+        const ry = Math.max(0.5, height / 2);
+        this.ctx.beginPath();
+        this.ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.stroke();
+        break;
+      }
+      case "image": {
+        const src = node.data?.src;
+        if (!src || this.imageLoadFailedSrc.has(src)) {
+          this.ctx.fillStyle = fill;
+          this.ctx.fillRect(x, y, width, height);
+          this.ctx.strokeRect(x, y, width, height);
+          this.ctx.fillStyle = "#64748b";
+          this.ctx.font = `${Math.max(10, Math.min(width, height) * 0.12)}px sans-serif`;
+          this.ctx.textAlign = "center";
+          this.ctx.textBaseline = "middle";
+          this.ctx.fillText("Image", x + width / 2, y + height / 2);
+          break;
+        }
+        let img = this.imageElementsBySrc.get(src);
+        if (!img) {
+          img = new Image();
+          img.decoding = "async";
+          img.crossOrigin = "anonymous";
+          img.onload = () => this.scheduleRender();
+          img.onerror = () => {
+            this.imageLoadFailedSrc.add(src);
+            this.scheduleRender();
+          };
+          img.src = src;
+          this.imageElementsBySrc.set(src, img);
+        }
+        if (img.complete && img.naturalWidth > 0) {
+          this.ctx.drawImage(img, x, y, width, height);
+          this.ctx.strokeRect(x, y, width, height);
+        } else {
+          this.ctx.fillStyle = fill;
+          this.ctx.fillRect(x, y, width, height);
+          this.ctx.strokeRect(x, y, width, height);
+        }
         break;
       }
       case "arrow": {

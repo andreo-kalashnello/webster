@@ -1,30 +1,28 @@
-import { FC, ReactNode } from "react";
+import type { FC, ReactNode } from "react";
 
 import { EditorToolbar } from "./EditorToolbar";
-import { CanvasArea } from "./CanvasArea";
+import { EditorToolsDock } from "./EditorToolsDock";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { EditorFooter } from "./EditorFooter";
 
-interface CanvasEditorLayoutProps {
-  children?: ReactNode;
-}
+type CanvasEditorLayoutProps = {
+  /** Live canvas surface (engine renderer + interactions). */
+  canvas: ReactNode;
+};
 
-export const CanvasEditorLayout: FC<CanvasEditorLayoutProps> = () => {
+export const CanvasEditorLayout: FC<CanvasEditorLayoutProps> = ({ canvas }) => {
   return (
-    <div className="h-screen flex flex-col bg-white overflow-hidden">
-      {/* Toolbar */}
+    <div className="flex h-screen flex-col overflow-hidden bg-white">
       <EditorToolbar />
 
-      {/* Main Content Area */}
-      <div className="flex flex-1 overflow-hidden relative">
-        {/* Canvas */}
-        <CanvasArea />
-
-        {/* Properties Panel - Responsive */}
+      <div className="relative flex min-h-0 flex-1 overflow-hidden">
+        <div className="relative min-h-0 min-w-0 flex-1">
+          {canvas}
+          <EditorToolsDock />
+        </div>
         <PropertiesPanel />
       </div>
 
-      {/* Footer */}
       <EditorFooter />
     </div>
   );

@@ -51,7 +51,7 @@ export function deserializeSceneFromJson(json: string): DeserializeResult {
     const raw = parsed as Partial<SerializableSceneState>;
     const versionWasMissing = typeof raw.version !== "number" || raw.version < 1;
     const candidate: SerializableSceneState = {
-      version: versionWasMissing ? 1 : raw.version,
+      version: versionWasMissing ? 1 : typeof raw.version === "number" ? raw.version : 1,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       nodes: isRecord(raw.nodes) ? (raw.nodes as any) : {},
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

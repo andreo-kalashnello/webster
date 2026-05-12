@@ -1,5 +1,11 @@
-import { ArrowRight, Image, MousePointer2, Pencil, Square, Triangle, Type } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowRight, Circle, Image as ImageIcon, MousePointer2, Pencil, Square, Triangle, Type } from "lucide-react";
+import { useMutation, useQuery } from "@apollo/client/react";
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+
+import { CanvasEditorLayout, EditorWorkspaceProvider } from "@/components/editor";
+import { AUTOSAVE_PROJECT_MUTATION, PROJECT_QUERY } from "../graphql/projects.graphql";
+import { sceneStateFromProjectContent } from "@/shared/lib/editor/scene-from-project-content";
 
 import {
   DEFAULT_LAYER_ID,
@@ -9,10 +15,10 @@ import {
   createCanvasEngine,
   createEmptySerializableSceneState,
   createStressScene,
+  deserializeSceneFromJson,
   getNodeWorldBounds,
   hitTestNodeAtWorldPoint,
   pickTopMostNodeAtWorldPoint,
-  deserializeSceneFromJson,
   serializeSceneToJson,
   type RenderMode,
   type NodeId,
@@ -44,8 +50,9 @@ const TOOLBAR_TOOLS: CanvasToolUiItem[] = [
   { id: "text", label: "Text", hint: "T", Icon: Type },
   { id: "rect", label: "Rect", hint: "R", Icon: Square },
   { id: "triangle", label: "Triangle", hint: "G", Icon: Triangle },
+  { id: "ellipse", label: "Ellipse", hint: "E", Icon: Circle },
   { id: "arrow", label: "Arrow", hint: "A", Icon: ArrowRight },
-  { id: "image", label: "Image", hint: "I", Icon: Image },
+  { id: "image", label: "Image", hint: "I", Icon: ImageIcon },
 ];
 
 type DragState =
@@ -80,7 +87,7 @@ type DragState =
       mode: "shape";
       pointerId: number;
       nodeId: NodeId;
-      tool: "rect" | "triangle" | "image";
+      tool: "rect" | "triangle" | "ellipse" | "image";
       startPoint: Point;
       endPoint: Point;
     }
@@ -129,6 +136,29 @@ export function CanvasEnginePage() {
   const canvasInteractionActiveRef = useRef(false);
   const rendererRef = useRef<CanvasRenderer | null>(null);
   const dragStateRef = useRef<DragState | null>(null);
+  const autosaveTimerRef = useRef<number | null>(null);
+  const lastSentJsonRef = useRef<string>("");
+  const hydratedEditorProjectIdRef = useRef<string | null>(null);
+
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const standaloneMode = location.pathname === "/canvas-engine";
+  const isEditorRoute = location.pathname === "/editor";
+  const projectId = searchParams.get("projectId");
+
+  const {
+    data: projectData,
+    loading: projectLoading,
+    error: projectQueryError,
+  } = useQuery(PROJECT_QUERY, {
+    variables: { id: projectId ?? "" },
+    skip: standaloneMode || !projectId,
+  });
+
+  const [autosaveProject] = useMutation(AUTOSAVE_PROJECT_MUTATION);
+  const [autosaveLabel, setAutosaveLabel] = useState<string>("");
+  const [editorGridEnabled, setEditorGridEnabled] = useState(false);
 
   const [debug, setDebug] = useState<EngineDebugState>(() => {
     const runtime = engine.getRuntimeSnapshot();
@@ -156,14 +186,184 @@ export function CanvasEnginePage() {
     screenHeight: number;
   } | null>(null);
 
+  const saveNow = useCallback(async () => {
+    if (!projectId || standaloneMode) return;
+    const json = engine.exportSceneJson();
+    await autosaveProject({
+      variables: { id: projectId, content: JSON.parse(json) as Record<string, unknown> },
+    });
+    lastSentJsonRef.current = json;
+    setAutosaveLabel("Saved");
+    window.setTimeout(() => {
+      setAutosaveLabel((s) => (s === "Saved" ? "" : s));
+    }, 1500);
+  }, [projectId, standaloneMode, engine, autosaveProject]);
+
+  const applyProjectContent = useCallback(
+    (content: unknown) => {
+      const scene = sceneStateFromProjectContent(content);
+      engine.replaceScene(scene, { recordHistory: false });
+      engine.setSelection([]);
+      lastSentJsonRef.current = engine.exportSceneJson();
+    },
+    [engine],
+  );
+
+  const zoomIn = useCallback(() => {
+    const r = rendererRef.current;
+    if (!r) return;
+    const c = r.getCamera();
+    r.setCamera({ zoom: Math.min(MAX_ZOOM, c.zoom * 1.12) });
+  }, []);
+
+  const zoomOut = useCallback(() => {
+    const r = rendererRef.current;
+    if (!r) return;
+    const c = r.getCamera();
+    r.setCamera({ zoom: Math.max(MIN_ZOOM, c.zoom / 1.12) });
+  }, []);
+
+  const zoomReset = useCallback(() => {
+    const r = rendererRef.current;
+    if (!r) return;
+    r.setCamera({ x: 0, y: 0, zoom: 1 });
+  }, []);
+
+  const projectTitle =
+    (projectData as { project?: { title?: string } } | null | undefined)?.project?.title ?? null;
+
+  const workspaceValue = useMemo(
+    () => ({
+      engine,
+      projectId,
+      projectTitle,
+      autosaveLabel,
+      saveNow,
+      applyProjectContent,
+      zoomIn,
+      zoomOut,
+      zoomReset,
+      cameraZoomPercent: Math.min(400, Math.max(25, Math.round(debug.cameraZoom * 100))),
+      gridEnabled: editorGridEnabled,
+      setGridEnabled: setEditorGridEnabled,
+    }),
+    [
+      engine,
+      projectId,
+      projectTitle,
+      autosaveLabel,
+      saveNow,
+      applyProjectContent,
+      zoomIn,
+      zoomOut,
+      zoomReset,
+      debug.cameraZoom,
+      editorGridEnabled,
+    ],
+  );
+
+  useEffect(() => {
+    if (standaloneMode || !isEditorRoute) {
+      return;
+    }
+    if (!projectId) {
+      navigate("/projects?new=1", { replace: true });
+    }
+  }, [standaloneMode, isEditorRoute, projectId, navigate]);
+
+  useEffect(() => {
+    if (standaloneMode) {
+      hydratedEditorProjectIdRef.current = "__canvas_engine__";
+      engine.replaceScene(createRendererDemoScene(), { recordHistory: false });
+      engine.setSelection(["node-rect"]);
+      setAutosaveLabel("");
+      return;
+    }
+
+    if (!projectId) {
+      return;
+    }
+
+    if (projectLoading) {
+      return;
+    }
+
+    const proj = (projectData as { project?: { content?: unknown } } | null | undefined)?.project;
+    if (projectQueryError || !proj) {
+      hydratedEditorProjectIdRef.current = null;
+      engine.replaceScene(createEmptySerializableSceneState(), { recordHistory: false });
+      engine.setSelection([]);
+      lastSentJsonRef.current = engine.exportSceneJson();
+      setAutosaveLabel("");
+      return;
+    }
+
+    if (hydratedEditorProjectIdRef.current === projectId) {
+      return;
+    }
+
+    hydratedEditorProjectIdRef.current = projectId;
+    const scene = sceneStateFromProjectContent(proj.content);
+    engine.replaceScene(scene, { recordHistory: false });
+    engine.setSelection([]);
+    lastSentJsonRef.current = engine.exportSceneJson();
+    setAutosaveLabel("");
+  }, [standaloneMode, projectId, projectLoading, projectQueryError, projectData, engine]);
+
+  useEffect(() => {
+    if (standaloneMode || !projectId || projectLoading || projectQueryError) {
+      return;
+    }
+
+    const proj = (projectData as { project?: { content?: unknown } } | null | undefined)?.project;
+    if (!proj) {
+      return;
+    }
+
+    const flushAutosave = () => {
+      const json = engine.exportSceneJson();
+      if (json === lastSentJsonRef.current) {
+        return;
+      }
+      setAutosaveLabel("Saving…");
+      void autosaveProject({
+        variables: {
+          id: projectId,
+          content: JSON.parse(json) as Record<string, unknown>,
+        },
+      })
+        .then(() => {
+          lastSentJsonRef.current = json;
+          setAutosaveLabel("Saved");
+          window.setTimeout(() => {
+            setAutosaveLabel((s) => (s === "Saved" ? "" : s));
+          }, 2000);
+        })
+        .catch(() => {
+          setAutosaveLabel("Save failed");
+        });
+    };
+
+    const unsub = engine.events.on("scene:changed", () => {
+      if (autosaveTimerRef.current) {
+        window.clearTimeout(autosaveTimerRef.current);
+      }
+      autosaveTimerRef.current = window.setTimeout(flushAutosave, 1200);
+    });
+
+    return () => {
+      unsub();
+      if (autosaveTimerRef.current) {
+        window.clearTimeout(autosaveTimerRef.current);
+        autosaveTimerRef.current = null;
+      }
+    };
+  }, [standaloneMode, projectId, projectLoading, projectQueryError, projectData, engine, autosaveProject]);
+
   useEffect(() => {
     if (!canvasRef.current) {
       return;
     }
-
-    // Demo scene is used as a stable smoke-test for renderer lifecycle.
-    engine.replaceScene(createRendererDemoScene());
-    engine.setSelection(["node-rect"]);
 
     const renderer = new CanvasRenderer({
       canvas: canvasRef.current,
@@ -532,7 +732,7 @@ export function CanvasEnginePage() {
       return;
     }
 
-    if (activeTool === "rect" || activeTool === "triangle" || activeTool === "image") {
+    if (activeTool === "rect" || activeTool === "triangle" || activeTool === "ellipse" || activeTool === "image") {
       const shapeNodeId = `${activeTool}-${Date.now()}`;
 
       engine.addNode({
@@ -1039,6 +1239,93 @@ export function CanvasEnginePage() {
     }));
   }
 
+  const handleCanvasDragOver = useCallback((event: DragEvent<HTMLCanvasElement>) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+  }, []);
+
+  const handleCanvasDrop = useCallback(
+    async (event: DragEvent<HTMLCanvasElement>) => {
+      event.preventDefault();
+      const files = Array.from(event.dataTransfer.files).filter((f) => f.type.startsWith("image/"));
+      if (files.length === 0) {
+        return;
+      }
+
+      const canvas = event.currentTarget;
+      const renderer = rendererRef.current;
+      if (!renderer) {
+        return;
+      }
+
+      const point = getCanvasPointFromClient(canvas, event.clientX, event.clientY);
+      const worldPoint = renderer.screenToWorld(point);
+
+      const readAsDataUrl = (file: File) =>
+        new Promise<string>((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(String(r.result));
+          r.onerror = () => reject(new Error("read failed"));
+          r.readAsDataURL(file);
+        });
+
+      const file = files[0]!;
+      let src: string;
+      try {
+        src = await readAsDataUrl(file);
+      } catch {
+        return;
+      }
+
+      const rt = engine.getRuntimeSnapshot();
+      const one = rt.selectedNodeIds.length === 1 ? rt.selectedNodeIds[0] : null;
+      const sel = one ? engine.getSerializableState().nodes[one] : null;
+
+      if (sel?.type === "image") {
+        engine.updateNode(one!, (prev) => ({
+          ...prev,
+          data: { ...(prev.data ?? {}), src },
+        }));
+        engine.setSelection([one!]);
+        return;
+      }
+
+      const img = new Image();
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error("img"));
+        img.src = src;
+      }).catch(() => undefined);
+
+      const nw = img.naturalWidth || 320;
+      const nh = img.naturalHeight || 240;
+      const maxSide = 480;
+      let w = nw;
+      let h = nh;
+      if (w > maxSide) {
+        h = (h / w) * maxSide;
+        w = maxSide;
+      }
+      if (h > maxSide) {
+        w = (w / h) * maxSide;
+        h = maxSide;
+      }
+
+      const id = `image-${Date.now()}`;
+      engine.addNode({
+        id,
+        layerId: DEFAULT_LAYER_ID,
+        type: "image",
+        bounds: { x: worldPoint.x - w / 2, y: worldPoint.y - h / 2, width: w, height: h },
+        transform: createIdentityTransform(),
+        style: { fill: "#e2e8f0", stroke: "#1e293b", strokeWidth: 1, opacity: 1 },
+        data: { src },
+      });
+      engine.setSelection([id]);
+    },
+    [engine],
+  );
+
   const runtimeSnapshot = engine.getRuntimeSnapshot();
   const selectedNodeId = runtimeSnapshot.selectedNodeIds.length === 1 ? runtimeSnapshot.selectedNodeIds[0] : null;
   const selectedNode = selectedNodeId ? engine.getSerializableState().nodes[selectedNodeId] : null;
@@ -1052,14 +1339,52 @@ export function CanvasEnginePage() {
     ? getRotateHandlePoint(selectedNode.bounds, ROTATE_HANDLE_OFFSET / camera.zoom)
     : null;
 
-  return (
-    <main className="relative h-screen w-screen overflow-hidden bg-slate-100 font-sans">
+  const canvasSurface = (
+    <>
       <div className="absolute inset-0 bg-[radial-gradient(#cbd5e1_2px,transparent_2px)] bg-size-[16px_16px]" />
+
+      {!standaloneMode && projectId && projectLoading ? (
+        <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/45 text-sm font-medium text-slate-100 backdrop-blur-[2px]">
+          Loading project…
+        </div>
+      ) : null}
+
+      {!standaloneMode && projectId && projectQueryError && !projectLoading ? (
+        <div className="pointer-events-auto absolute left-1/2 top-16 z-30 w-[min(92vw,28rem)] -translate-x-1/2 rounded-xl border border-rose-400/60 bg-rose-950/95 px-4 py-3 text-sm text-rose-50 shadow-lg">
+          <span>Could not load project: {projectQueryError.message}</span>
+          <Link className="ml-2 font-semibold text-emerald-300 underline underline-offset-2 hover:text-emerald-200" to="/projects">
+            Back to projects
+          </Link>
+        </div>
+      ) : null}
+
+      {!standaloneMode && projectId && !projectLoading && !projectQueryError ? (
+        <div className="pointer-events-none absolute right-4 top-4 z-20 text-right text-xs text-slate-600">
+          <Link className="pointer-events-auto font-medium text-emerald-700 underline-offset-2 hover:underline" to="/projects">
+            All projects
+          </Link>
+        </div>
+      ) : null}
+
+      {!standaloneMode && editorGridEnabled ? (
+        <div
+          className="pointer-events-none absolute inset-0 z-1"
+          style={{
+            backgroundImage: `
+              linear-gradient(0deg, rgba(148,163,184,0.35) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(148,163,184,0.35) 1px, transparent 1px)
+            `,
+            backgroundSize: "20px 20px",
+          }}
+        />
+      ) : null}
 
       <canvas
         ref={canvasRef}
         className="absolute inset-0 h-full w-full touch-none overscroll-none cursor-grab active:cursor-grabbing"
         tabIndex={0}
+        onDragOver={handleCanvasDragOver}
+        onDrop={(e) => void handleCanvasDrop(e)}
         onBlur={() => {
           canvasInteractionActiveRef.current = false;
         }}
@@ -1135,39 +1460,57 @@ export function CanvasEnginePage() {
           {debug.cameraZoom.toFixed(2)}x · {debug.selectedCount} sel · {debug.nodeCount} nodes
         </div>
         <div className="rounded-xl border border-slate-300 bg-white/90 px-3 py-1.5 text-xs font-mono text-slate-600 backdrop-blur-sm">
-          {debug.frameTimeMs > 0
-            ? `${Math.round(Math.min(1000 / debug.frameTimeMs, 999))} fps · ${debug.frameTimeMs.toFixed(1)}ms · ${debug.renderedNodes} drawn`
-            : "—"}
+          {debug.frameTimeMs > 0 && Number.isFinite(1000 / debug.frameTimeMs)
+            ? `${debug.frameTimeMs.toFixed(1)} ms · ~${Math.round(1000 / debug.frameTimeMs)} fps · ${debug.renderedNodes} drawn`
+            : "idle"}
         </div>
       </div>
 
-      <div className="pointer-events-none absolute bottom-6 left-1/2 z-20 -translate-x-1/2">
-        <div className="pointer-events-auto inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white/95 px-3 py-2 shadow-[0_10px_25px_rgba(15,23,42,0.2)] backdrop-blur-sm">
-          {TOOLBAR_TOOLS.map((tool) => {
-            const isActive = debug.activeTool === tool.id;
-            const Icon = tool.Icon;
+      {standaloneMode ? (
+        <div className="pointer-events-none absolute bottom-6 left-1/2 z-20 -translate-x-1/2">
+          <div className="pointer-events-auto inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white/95 px-3 py-2 shadow-[0_10px_25px_rgba(15,23,42,0.2)] backdrop-blur-sm">
+            {TOOLBAR_TOOLS.map((tool) => {
+              const isActive = debug.activeTool === tool.id;
+              const Icon = tool.Icon;
 
-            return (
-              <button
-                key={tool.id}
-                className={
-                  isActive
-                    ? "inline-flex h-10 w-10 items-center justify-center rounded-xl border border-blue-500 bg-blue-600 text-white"
-                    : "inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-300 bg-slate-50 text-slate-700 hover:border-blue-300 hover:text-blue-700"
-                }
-                title={`${tool.label} (${tool.hint})`}
-                type="button"
-                onClick={() => {
-                  engine.setTool(tool.id);
-                }}
-              >
-                <Icon className="h-5 w-5" />
-              </button>
-            );
-          })}
+              return (
+                <button
+                  key={tool.id}
+                  className={
+                    isActive
+                      ? "inline-flex h-10 w-10 items-center justify-center rounded-xl border border-blue-500 bg-blue-600 text-white"
+                      : "inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-300 bg-slate-50 text-slate-700 hover:border-blue-300 hover:text-blue-700"
+                  }
+                  title={`${tool.label} (${tool.hint})`}
+                  type="button"
+                  onClick={() => {
+                    engine.setTool(tool.id);
+                  }}
+                >
+                  <Icon className="h-5 w-5" />
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
-    </main>
+      ) : null}
+    </>
+  );
+
+  if (standaloneMode) {
+    return (
+      <main className="relative h-screen w-screen overflow-hidden bg-slate-100 font-sans">{canvasSurface}</main>
+    );
+  }
+
+  return (
+    <EditorWorkspaceProvider value={workspaceValue}>
+      <CanvasEditorLayout
+        canvas={
+          <div className="relative h-full min-h-0 w-full overflow-hidden bg-slate-100 font-sans">{canvasSurface}</div>
+        }
+      />
+    </EditorWorkspaceProvider>
   );
 }
 

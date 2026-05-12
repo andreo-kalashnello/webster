@@ -1,6 +1,6 @@
 import type { LayerId, NodeId, Point, Rect, Transform } from "../core/types";
 
-export type SceneNodeType = "rect" | "triangle" | "arrow" | "text" | "image" | "path";
+export type SceneNodeType = "rect" | "triangle" | "ellipse" | "arrow" | "text" | "image" | "path";
 
 export interface SceneNodeStyle {
   fill?: string;
