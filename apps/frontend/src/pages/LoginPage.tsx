@@ -1,7 +1,23 @@
-import { useMemo, useState } from "react";
+import { useState, useMemo } from "react";
 import { useMutation } from "@apollo/client/react";
-import { Link, useNavigate } from "react-router-dom";
-import { GET_CURRENT_USER, LOGIN_MUTATION } from "../graphql/auth.graphql";
+import { useNavigate, Link } from "react-router-dom";
+
+import { MarketingShell } from "@/components/layout/MarketingShell";
+import {
+  AuthCard,
+  authInputClass,
+  authLabelClass,
+  authLinkClass,
+  authPrimaryButtonClass,
+} from "@/components/ui/AuthCard";
+import { LOGIN_MUTATION, GET_CURRENT_USER } from "../graphql/auth.graphql";
+
+interface FieldErrors {
+  email?: string;
+  password?: string;
+  twoFactorCode?: string;
+  form?: string;
+}
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -10,41 +26,12 @@ export function LoginPage() {
     password: "",
     twoFactorCode: "",
   });
-  const [fieldErrors, setFieldErrors] = useState<{
-    email?: string;
-    password?: string;
-    twoFactorCode?: string;
-    form?: string;
-  }>({});
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [loading, setLoading] = useState(false);
   const [showTwoFactor, setShowTwoFactor] = useState(false);
 
-  const [loginMutation] = useMutation(LOGIN_MUTATION, {
-    refetchQueries: [{ query: GET_CURRENT_USER }],
-    onCompleted: () => {
-      navigate('/');
-    },
-    onError: (err) => {
-      const message = err.message || "Login failed";
-      const requiresTwoFactor = /two[- ]?factor|2fa/i.test(message);
-      setFieldErrors({
-        form: requiresTwoFactor ? "Two-factor code required to continue." : message,
-      });
-      if (requiresTwoFactor) {
-        setShowTwoFactor(true);
-      }
-      setLoading(false);
-    },
-  });
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    setFieldErrors((prev) => ({ ...prev, [name]: undefined, form: undefined }));
-  };
-
   const validationErrors = useMemo(() => {
-    const next: typeof fieldErrors = {};
+    const next: FieldErrors = {};
     const email = formData.email.trim();
     if (!email) {
       next.email = "Email is required";
@@ -65,73 +52,40 @@ export function LoginPage() {
     return next;
   }, [formData.email, formData.password, formData.twoFactorCode, showTwoFactor]);
 
-  const oauthConfig = useMemo(() => {
-    const redirectUri = `${window.location.origin}/oauth/callback`;
-    return [
-      {
-        id: "Google",
-        label: "Continue with Google",
-        clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined,
-        url: (clientId: string) =>
-          `https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({
-            client_id: clientId,
-            redirect_uri: redirectUri,
-            response_type: "code",
-            scope: "openid email profile",
-            state: "Google",
-          }).toString()}`,
-      },
-      {
-        id: "Facebook",
-        label: "Continue with Facebook",
-        clientId: import.meta.env.VITE_FACEBOOK_CLIENT_ID as string | undefined,
-        url: (clientId: string) =>
-          `https://www.facebook.com/v19.0/dialog/oauth?${new URLSearchParams({
-            client_id: clientId,
-            redirect_uri: redirectUri,
-            response_type: "code",
-            scope: "email,public_profile",
-            state: "Facebook",
-          }).toString()}`,
-      },
-      {
-        id: "Github",
-        label: "Continue with GitHub",
-        clientId: import.meta.env.VITE_GITHUB_CLIENT_ID as string | undefined,
-        url: (clientId: string) =>
-          `https://github.com/login/oauth/authorize?${new URLSearchParams({
-            client_id: clientId,
-            redirect_uri: redirectUri,
-            scope: "read:user user:email",
-            state: "Github",
-          }).toString()}`,
-      },
-    ];
-  }, []);
+  const [loginMutation] = useMutation(LOGIN_MUTATION, {
+    refetchQueries: [{ query: GET_CURRENT_USER }],
+    onError: (err) => {
+      const message = err.message || "Login failed";
+      const requiresTwoFactor = /two[- ]?factor|2fa/i.test(message);
+      setFieldErrors((prev) => ({
+        ...prev,
+        form: requiresTwoFactor ? "Two-factor code required to continue." : message,
+      }));
+      if (requiresTwoFactor) {
+        setShowTwoFactor(true);
+      }
+      setLoading(false);
+    },
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFieldErrors((prev) => ({ ...prev, [name]: undefined, form: undefined }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFieldErrors({});
-    setLoading(true);
-
-    if (Object.keys(validationErrors).length > 0) {
-      setFieldErrors(validationErrors);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      await loginMutation({
-        variables: {
-          input: {
-            email: formData.email.trim(),
-            password: formData.password,
-            twoFactorCode: formData.twoFactorCode.trim() || undefined,
-          },
-        },
-      });
-    } catch (err) {
-      console.error('Login error:', err);
+    setFieldErrors(validationErrors);
+    if (Object.keys(validationErrors).length === 0) {
+      setLoading(true);
+      try {
+        await loginMutation({
+          variables: { input: { email: formData.email, password: formData.password } },
+        });
+      } catch {
+        // onError handles
+      }
     }
   };
 
@@ -162,6 +116,7 @@ export function LoginPage() {
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
                 placeholder="you@example.com"
+                aria-label="Email address"
               />
               {fieldErrors.email && <p className="mt-1 text-xs text-red-600">{fieldErrors.email}</p>}
             </div>
@@ -179,6 +134,7 @@ export function LoginPage() {
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
                 placeholder="••••••••"
+                aria-label="Password"
               />
               {fieldErrors.password && <p className="mt-1 text-xs text-red-600">{fieldErrors.password}</p>}
             </div>
@@ -196,10 +152,9 @@ export function LoginPage() {
                   onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
                   placeholder="123456"
+                  aria-label="Two-factor authentication code"
                 />
-                {fieldErrors.twoFactorCode && (
-                  <p className="mt-1 text-xs text-red-600">{fieldErrors.twoFactorCode}</p>
-                )}
+                {fieldErrors.twoFactorCode && <p className="mt-1 text-xs text-red-600">{fieldErrors.twoFactorCode}</p>}
               </div>
             )}
 
@@ -207,7 +162,8 @@ export function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowTwoFactor(true)}
-                className="text-left text-xs font-medium text-blue-600 hover:text-blue-700"
+                className="text-left text-xs font-medium text-blue-600 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                aria-label="Use two-factor authentication"
               >
                 Use a two-factor code
               </button>
@@ -216,31 +172,14 @@ export function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? "Signing in..." : "Sign In"}
             </button>
           </form>
 
           <div className="mt-6 space-y-3">
-            {oauthConfig.map((provider) => {
-              const disabled = !provider.clientId;
-              return (
-                <button
-                  key={provider.id}
-                  type="button"
-                  disabled={disabled}
-                  onClick={() => {
-                    if (provider.clientId) {
-                      window.location.href = provider.url(provider.clientId);
-                    }
-                  }}
-                  className="w-full border border-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg transition hover:border-gray-400 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {provider.label}
-                </button>
-              );
-            })}
+            {/* OAuth buttons will be added here if needed */}
             <p className="text-xs text-gray-500">
               OAuth buttons are enabled when client IDs are set in the frontend environment.
             </p>

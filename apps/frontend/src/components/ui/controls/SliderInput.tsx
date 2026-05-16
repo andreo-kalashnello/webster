@@ -20,13 +20,14 @@ export const SliderInput: FC<SliderInputProps> = ({
   className = "",
   ...props
 }) => {
+  const safeValue = value ?? min;
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
         {label && <label className="text-xs font-medium text-slate-700">{label}</label>}
         {showValue && (
           <span className="text-xs font-medium text-slate-600">
-            {value}
+            {safeValue}
             {unit}
           </span>
         )}
@@ -36,7 +37,7 @@ export const SliderInput: FC<SliderInputProps> = ({
         min={min}
         max={max}
         step={step}
-        value={value}
+        value={safeValue}
         className={`h-2 w-full cursor-pointer appearance-none rounded-lg bg-slate-200 accent-blue-500 ${className}`}
         {...props}
       />

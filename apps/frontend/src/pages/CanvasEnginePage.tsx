@@ -11,11 +11,14 @@ import {
   DEFAULT_LAYER_ID,
   ENGINE_TOOLS,
   CanvasRenderer,
+  applyMat2DToPoint,
+  composeNodeLocalToWorldMatrix,
   createIdentityTransform,
   createCanvasEngine,
   createEmptySerializableSceneState,
   createStressScene,
   deserializeSceneFromJson,
+  getDefaultNodePivot,
   getNodeWorldBounds,
   hitTestNodeAtWorldPoint,
   pickTopMostNodeAtWorldPoint,
@@ -232,14 +235,19 @@ export function CanvasEnginePage() {
     r.setCamera({ x: 0, y: 0, zoom: 1 });
   }, []);
 
-  const projectTitle =
-    (projectData as { project?: { title?: string } } | null | undefined)?.project?.title ?? null;
+  const projectMeta = (projectData as { project?: { title?: string; width?: number; height?: number } } | null | undefined)
+    ?.project;
+  const projectTitle = projectMeta?.title ?? null;
+  const projectWidth = projectMeta?.width ?? 800;
+  const projectHeight = projectMeta?.height ?? 600;
 
   const workspaceValue = useMemo(
     () => ({
       engine,
       projectId,
       projectTitle,
+      projectWidth,
+      projectHeight,
       autosaveLabel,
       saveNow,
       applyProjectContent,
@@ -254,6 +262,8 @@ export function CanvasEnginePage() {
       engine,
       projectId,
       projectTitle,
+      projectWidth,
+      projectHeight,
       autosaveLabel,
       saveNow,
       applyProjectContent,
@@ -612,6 +622,9 @@ export function CanvasEnginePage() {
       if (event.key === "Escape") {
         event.preventDefault();
         engine.setSelection([]);
+        if (debug.activeTool !== "select") {
+          engine.setTool("select");
+        }
         return;
       }
 
@@ -726,7 +739,7 @@ export function CanvasEnginePage() {
     const activeTool = engine.getRuntimeSnapshot().activeTool;
 
     if (activeTool === "text") {
-      const textValue = window.prompt("Введи текст", "Новый текст");
+      const textValue = window.prompt("Enter text", "New text");
       if (!textValue || textValue.trim().length === 0) {
         return;
       }
@@ -853,9 +866,8 @@ export function CanvasEnginePage() {
       const handleSizeWorld = HANDLE_SIZE / camera.zoom;
       const rotateOffsetWorld = ROTATE_HANDLE_OFFSET / camera.zoom;
       const rotateRadiusWorld = ROTATE_HANDLE_RADIUS / camera.zoom;
-      const worldBounds = getNodeWorldBounds(selectedNode);
-      const center = getRectCenter(worldBounds);
-      const rotateHandle = getRotateHandlePoint(worldBounds, rotateOffsetWorld);
+      const center = getNodePivotWorld(selectedNode);
+      const rotateHandle = getRotateHandlePoint(selectedNode, rotateOffsetWorld);
 
       if (isPointInCircle(worldPoint, rotateHandle, rotateRadiusWorld)) {
         const startAngle = radiansToDegrees(Math.atan2(worldPoint.y - center.y, worldPoint.x - center.x));
@@ -1254,7 +1266,7 @@ export function CanvasEnginePage() {
       return;
     }
 
-    const nextText = window.prompt("Редактирование текста", hitNode.data?.text ?? "") ?? "";
+    const nextText = window.prompt("Edit text", hitNode.data?.text ?? "") ?? "";
     if (nextText.trim().length === 0) {
       return;
     }
@@ -1417,13 +1429,17 @@ export function CanvasEnginePage() {
   const selectedNodeId = runtimeSnapshot.selectedNodeIds.length === 1 ? runtimeSnapshot.selectedNodeIds[0] : null;
   const selectedNode = selectedNodeId ? engine.getSerializableState().nodes[selectedNodeId] : null;
   const showHandles = debug.activeTool === "select" && Boolean(selectedNode);
-  const camera = { x: debug.cameraX, y: debug.cameraY, zoom: debug.cameraZoom };
+  const camera = rendererRef.current?.getCamera() ?? {
+    x: debug.cameraX,
+    y: debug.cameraY,
+    zoom: debug.cameraZoom,
+  };
   const resizeHandles =
     showHandles && selectedNode && !selectedNode.data?.points
       ? getResizeHandles(selectedNode.bounds)
       : [];
   const rotateHandle = showHandles && selectedNode
-    ? getRotateHandlePoint(getNodeWorldBounds(selectedNode), ROTATE_HANDLE_OFFSET / camera.zoom)
+    ? getRotateHandlePoint(selectedNode, ROTATE_HANDLE_OFFSET / camera.zoom)
     : null;
 
   const canvasSurface = (
@@ -1751,20 +1767,17 @@ function radiansToDegrees(value: number): number {
   return (value * 180) / Math.PI;
 }
 
-function getRectCenter(bounds: { x: number; y: number; width: number; height: number }): Point {
-  return {
-    x: bounds.x + bounds.width / 2,
-    y: bounds.y + bounds.height / 2,
-  };
+function getNodePivotWorld(node: SceneNode): Point {
+  const pivotLocal = getDefaultNodePivot(node.bounds);
+  const m = composeNodeLocalToWorldMatrix(node);
+  return applyMat2DToPoint(m, pivotLocal);
 }
 
-function getRotateHandlePoint(
-  bounds: { x: number; y: number; width: number; height: number },
-  offset: number,
-): Point {
+function getRotateHandlePoint(node: SceneNode, offset: number): Point {
+  const worldBounds = getNodeWorldBounds(node);
   return {
-    x: bounds.x + bounds.width / 2,
-    y: bounds.y - offset,
+    x: worldBounds.x + worldBounds.width / 2,
+    y: worldBounds.y - offset,
   };
 }
 

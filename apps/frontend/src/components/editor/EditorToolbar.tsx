@@ -1,7 +1,9 @@
 import type { FC } from "react";
 import { useEffect, useReducer } from "react";
 import { Grid3x3, ZoomIn, ZoomOut } from "lucide-react";
+import { Link } from "react-router-dom";
 
+import { BrandLogo } from "@/components/layout/BrandLogo";
 import { useOptionalEditorWorkspace } from "./editor-workspace-context";
 
 export const EditorToolbar: FC = () => {
@@ -19,22 +21,32 @@ export const EditorToolbar: FC = () => {
 
   if (!workspace) {
     return (
-      <header className="border-b border-slate-200 bg-white shadow-sm">
-        <div className="px-4 py-3 text-sm text-slate-500">Editor shell (no canvas workspace)</div>
+      <header className="border-b border-violet-200/60 bg-white/90 px-4 py-3 text-sm text-violet-600 shadow-sm backdrop-blur-md">
+        Editor shell (no canvas workspace)
       </header>
     );
   }
 
-  const { zoomIn, zoomOut, zoomReset, cameraZoomPercent, gridEnabled, setGridEnabled } = workspace;
+  const { zoomIn, zoomOut, zoomReset, cameraZoomPercent, gridEnabled, setGridEnabled, projectTitle } =
+    workspace;
 
   return (
-    <header className="border-b border-slate-200 bg-white shadow-sm">
-      <div className="flex items-center gap-4 overflow-x-auto px-4 py-3">
-        <div className="flex items-center gap-2 border-r border-slate-200 pr-4">
+    <header className="border-b border-violet-200/60 bg-white/90 shadow-sm backdrop-blur-md">
+      <div className="flex items-center gap-4 overflow-x-auto px-4 py-2.5">
+        <div className="hidden shrink-0 sm:block">
+          <BrandLogo />
+        </div>
+        {projectTitle ? (
+          <p className="hidden max-w-48 truncate text-sm font-semibold text-violet-900 md:block">
+            {projectTitle}
+          </p>
+        ) : null}
+
+        <div className="ml-auto flex items-center gap-2 border-r border-violet-200/80 pr-4">
           <button
             type="button"
             onClick={zoomOut}
-            className="rounded-lg p-2 text-slate-700 transition-colors hover:bg-slate-100"
+            className="rounded-lg p-2 text-violet-800 transition hover:bg-violet-100"
             title="Zoom out"
           >
             <ZoomOut size={18} />
@@ -42,14 +54,14 @@ export const EditorToolbar: FC = () => {
           <button
             type="button"
             onClick={zoomReset}
-            className="min-w-14 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100"
+            className="min-w-14 rounded-lg px-3 py-2 text-sm font-semibold text-violet-900 transition hover:bg-violet-100"
           >
             {cameraZoomPercent}%
           </button>
           <button
             type="button"
             onClick={zoomIn}
-            className="rounded-lg p-2 text-slate-700 transition-colors hover:bg-slate-100"
+            className="rounded-lg p-2 text-violet-800 transition hover:bg-violet-100"
             title="Zoom in"
           >
             <ZoomIn size={18} />
@@ -61,14 +73,21 @@ export const EditorToolbar: FC = () => {
           onClick={() => setGridEnabled(!gridEnabled)}
           className={
             gridEnabled
-              ? "flex items-center gap-2 rounded-lg bg-blue-100 px-3 py-2 text-blue-700 transition-colors"
-              : "flex items-center gap-2 rounded-lg px-3 py-2 text-slate-700 transition-colors hover:bg-slate-100"
+              ? "flex items-center gap-2 rounded-lg bg-violet-100 px-3 py-2 text-violet-800"
+              : "flex items-center gap-2 rounded-lg px-3 py-2 text-violet-800 transition hover:bg-violet-50"
           }
           title="Toggle grid"
         >
           <Grid3x3 size={18} />
           <span className="text-sm font-medium">Grid</span>
         </button>
+
+        <Link
+          to="/"
+          className="rounded-full border border-violet-200 px-3 py-1.5 text-xs font-semibold text-violet-700 hover:bg-violet-50"
+        >
+          Home
+        </Link>
       </div>
     </header>
   );

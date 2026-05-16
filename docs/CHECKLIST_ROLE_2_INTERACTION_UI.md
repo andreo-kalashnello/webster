@@ -82,8 +82,8 @@
 - [x] Страница сброса пароля.
 - [x] Страница профиля.
 - [x] Страница списка проектов.
-- [x] Страница списка шаблонов.
-- [x] Страница пользовательских шаблонов.
+- [x] Страница **My templates** (`/templates`) — единый экран пользовательских шаблонов.
+- [x] Редирект `/user-templates` → `/templates` (старый URL).
 - [x] Страница редактора.
 
 ## 4. Интерфейс редактора
@@ -102,8 +102,10 @@
 - [x] Подключить автосохранение проекта (debounce).
 - [x] Подключить ручное сохранение проекта.
 - [x] Подключить сохранение/восстановление версии.
-- [x] Подключить загрузку шаблонов.
-- [x] Подключить сохранение пользовательского шаблона.
+- [x] Подключить загрузку пользовательских шаблонов (`userTemplates`).
+- [x] Подключить сохранение пользовательского шаблона (редактор + страница My templates).
+- [x] Подключить создание / редактирование / удаление шаблона (`createUserTemplate`, `updateUserTemplate`, `deleteUserTemplate`).
+- [x] Подключить создание проекта из шаблона (`createProjectFromTemplate` → редактор).
 - [x] Подключить экспорт и download flow.
 - [x] Подключить генерацию share-link в UI.
 - [x] Согласовать с ролью 1 формат payload для save/load canvas state.
@@ -113,6 +115,8 @@
 - Редактор `/editor`: `CanvasEnginePage` оборачивает канвас в `CanvasEditorLayout` + `EditorWorkspaceProvider` — тулбар/свойства/футер получают один и тот же `CanvasEngine` через контекст; вся геометрия/рендер остаётся в движке.
 - `Project.content` / autosave / шаблоны: тот же JSON, что `serializeSceneToJson` / `SerializableSceneState`; маппинг в `apps/frontend/src/shared/lib/editor/scene-from-project-content.ts`.
 - Футер: Save now (`autosaveProject`), snapshot / restore версий (`createVersion`, `restoreVersion`), JSON (клиентский файл), PNG (`exportPng` + URL), шаблон (`createUserTemplate`), share (`createShareLink` + буфер обмена).
+- **My templates** (`/templates`): список `userTemplates`, New template (пустая сцена), Edit (title/size), Delete, New project из шаблона. В навигации только «My templates» (без отдельного каталога base templates в UI).
+- Логотип: `src/assets/webster-logo.svg` + `WebsterLogoIcon` в `BrandLogo` (шапка, редактор, favicon).
 - `/canvas-engine`: по-прежнему полноэкранный стенд движка без product shell.
 
 ## 6. UX-устойчивость

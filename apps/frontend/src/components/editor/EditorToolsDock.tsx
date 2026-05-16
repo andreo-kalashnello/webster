@@ -72,7 +72,7 @@ export const EditorToolsDock: FC = () => {
       ref={rootRef}
       className="pointer-events-none absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 justify-center px-2"
     >
-      <div className="pointer-events-auto inline-flex items-center gap-1 rounded-2xl border border-slate-300 bg-white/95 px-2 py-2 shadow-lg backdrop-blur-sm">
+      <div className="pointer-events-auto inline-flex items-center gap-1 rounded-2xl border border-violet-200/80 bg-white/95 px-2 py-2 shadow-xl shadow-violet-300/25 backdrop-blur-sm">
         {PRIMARY_DOCK_TOOLS.map(({ id, label, Icon }) => {
           const isActive = activeTool === id;
           return (
@@ -86,8 +86,8 @@ export const EditorToolsDock: FC = () => {
               }}
               className={
                 isActive
-                  ? "inline-flex h-10 w-10 items-center justify-center rounded-xl border border-blue-500 bg-blue-600 text-white"
-                  : "inline-flex h-10 w-10 items-center justify-center rounded-xl border border-transparent text-slate-700 hover:bg-slate-100"
+                    ? "inline-flex h-10 w-10 items-center justify-center rounded-xl border border-violet-500 bg-linear-to-br from-violet-600 to-fuchsia-500 text-white shadow-md"
+                    : "inline-flex h-10 w-10 items-center justify-center rounded-xl border border-transparent text-violet-800 hover:bg-violet-100"
               }
             >
               <Icon className="h-5 w-5" />

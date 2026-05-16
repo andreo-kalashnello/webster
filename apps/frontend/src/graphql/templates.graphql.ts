@@ -1,19 +1,5 @@
 import { gql } from "@apollo/client";
 
-export const BASE_TEMPLATES_QUERY = gql`
-  query BaseTemplates {
-    baseTemplates {
-      id
-      title
-      thumbnailUrl
-      width
-      height
-      isPublic
-      updatedAt
-    }
-  }
-`;
-
 export const USER_TEMPLATES_QUERY = gql`
   query UserTemplates {
     userTemplates {
@@ -43,6 +29,20 @@ export const CREATE_USER_TEMPLATE_MUTATION = gql`
     createUserTemplate(input: $input) {
       id
       title
+      width
+      height
+      updatedAt
+    }
+  }
+`;
+
+export const UPDATE_USER_TEMPLATE_MUTATION = gql`
+  mutation UpdateUserTemplate($id: ID!, $input: UpdateUserTemplateDto!) {
+    updateUserTemplate(id: $id, input: $input) {
+      id
+      title
+      width
+      height
       updatedAt
     }
   }

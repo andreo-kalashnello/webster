@@ -14,6 +14,7 @@ const cookieParser = require("cookie-parser");
 
 import { AppModule } from "./app.module";
 import { HttpExceptionFilter } from "./infra/common/filters/http-exception.filter";
+import { registerGraphiQLRoutes } from "./infra/graphql/register-graphiql";
 import { requestIdMiddleware } from "./infra/common/middleware/request-id.middleware";
 
 async function bootstrap() {
@@ -25,7 +26,14 @@ async function bootstrap() {
   // Use Winston as the NestJS logger
   app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
 
-  app.use(helmet());
+  app.use(
+    helmet({
+      // GraphiQL dev page uses scripts/styles from CDN; keep strict CSP only in production.
+      contentSecurityPolicy: isProduction ? undefined : false,
+    }),
+  );
+
+  registerGraphiQLRoutes(app, isProduction);
 
   app.use(cookieParser());
 

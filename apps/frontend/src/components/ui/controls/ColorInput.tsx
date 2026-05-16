@@ -5,7 +5,16 @@ interface ColorInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "t
   showHex?: boolean;
 }
 
-export const ColorInput: FC<ColorInputProps> = ({ label, showHex = true, className = "", ...props }) => {
+export const ColorInput: FC<ColorInputProps> = ({
+  label,
+  showHex = true,
+  className = "",
+  value,
+  onChange,
+  ...props
+}) => {
+  const textValue = typeof value === "string" ? value : "";
+  const colorValue = /^#[0-9a-fA-F]{6}$/.test(textValue) ? textValue : "#000000";
   return (
     <div className="flex flex-col gap-1.5">
       {label && <label className="text-xs font-medium text-slate-700">{label}</label>}
@@ -13,6 +22,8 @@ export const ColorInput: FC<ColorInputProps> = ({ label, showHex = true, classNa
         <input
           type="color"
           className="h-9 w-12 cursor-pointer rounded-md border border-slate-300"
+          value={colorValue}
+          onChange={onChange}
           {...props}
         />
         {showHex && (
@@ -21,6 +32,8 @@ export const ColorInput: FC<ColorInputProps> = ({ label, showHex = true, classNa
             placeholder="#000000"
             className="flex-1 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition-colors placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-slate-100 disabled:text-slate-500"
             pattern="^#[0-9A-Fa-f]{6}$"
+            value={textValue}
+            onChange={onChange}
             {...props}
           />
         )}

@@ -8,6 +8,7 @@ import { BrowserRouter } from "react-router-dom";
 
 import App from "./App";
 import "./styles.css";
+import { useToastStore } from "./shared/stores/toast.store";
 
 const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL || "http://localhost:4000/graphql";
 
@@ -29,13 +30,37 @@ async function refreshToken() {
   }
 }
 
+let lastErrorToastAt = 0;
+const ERROR_TOAST_THROTTLE_MS = 2500;
+
+function pushErrorToast(title: string, message?: string) {
+  const now = Date.now();
+  if (now - lastErrorToastAt < ERROR_TOAST_THROTTLE_MS) {
+    return;
+  }
+  lastErrorToastAt = now;
+  useToastStore.getState().pushToast({
+    title,
+    message,
+    tone: "error",
+  });
+}
+
 const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) => {
   const hasAuthError =
     graphQLErrors?.some((err) =>
       err.extensions?.code ? err.extensions.code === "UNAUTHENTICATED" : /unauth/i.test(err.message),
     ) ?? false;
 
-  if (networkError || !hasAuthError) {
+  if (networkError) {
+    pushErrorToast("Server error", networkError.message);
+    return;
+  }
+
+  if (!hasAuthError) {
+    if (graphQLErrors && graphQLErrors.length > 0) {
+      pushErrorToast("Request failed", graphQLErrors[0]?.message);
+    }
     return;
   }
 

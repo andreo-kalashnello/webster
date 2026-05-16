@@ -1,7 +1,10 @@
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "@apollo/client/react";
 import { useCallback, useEffect, useState } from "react";
+import { Plus } from "lucide-react";
 
+import { AppShell } from "@/components/layout/AppShell";
+import { AppPageSpinner } from "@/components/ui/PageSpinner";
 import {
   CREATE_PROJECT_MUTATION,
   DELETE_PROJECT_MUTATION,
@@ -13,7 +16,6 @@ import { BlockingOverlay } from "@/components/ui/BlockingOverlay";
 import { useToastStore } from "@/shared/stores/toast.store";
 
 const DEFAULT_PAGINATION = { page: 1, limit: 12 };
-
 const EMPTY_SCENE = createEmptySerializableSceneState();
 
 function formatDate(value?: string) {
@@ -91,7 +93,9 @@ export function ProjectsPage() {
     },
   });
 
-  const projects = data?.projects?.items ?? [];
+  const projects =
+    (data as { projects?: { items?: Array<{ id: string; title: string; updatedAt?: string }> } } | undefined)
+      ?.projects?.items ?? [];
 
   useEffect(() => {
     if (searchParams.get("new") === "1") {
@@ -178,74 +182,84 @@ export function ProjectsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-6 py-12">
-        <header className="flex items-center justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Projects</p>
-            <h1 className="mt-2 text-3xl font-semibold">Your projects</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <button
-              className="rounded-full bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-emerald-300 disabled:opacity-60"
-              onClick={openCreateModal}
-              type="button"
-              disabled={creating}
-            >
-              New project
-            </button>
-            <Link to="/" className="text-sm text-slate-300 hover:text-white">
-              Back to home
-            </Link>
-          </div>
-        </header>
+    <AppShell
+      title="Your projects"
+      subtitle="Projects"
+      actions={
+        <button
+          type="button"
+          onClick={openCreateModal}
+          disabled={creating}
+          className="inline-flex items-center gap-2 rounded-full bg-linear-to-r from-violet-500 to-fuchsia-500 px-5 py-2.5 text-sm font-bold text-white shadow-lg disabled:opacity-60"
+        >
+          <Plus className="h-4 w-4" />
+          New project
+        </button>
+      }
+    >
+      {loading ? <AppPageSpinner label="Loading projects…" /> : null}
 
-        {loading ? (
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 text-sm text-slate-300">
-            Loading projects...
-          </div>
-        ) : null}
+      {error ? (
+        <p className="rounded-2xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+          Failed to load projects: {error.message}
+        </p>
+      ) : null}
 
-        {error ? (
-          <div className="rounded-2xl border border-rose-500/40 bg-rose-500/10 p-6 text-sm text-rose-200">
-            Failed to load projects: {error.message}
-          </div>
-        ) : null}
+      {!loading && projects.length === 0 && !error ? (
+        <p className="glass-card rounded-2xl px-6 py-8 text-center text-sm text-violet-100/80">
+          No projects yet. Create your first board to get started.
+        </p>
+      ) : null}
 
-        {!loading && projects.length === 0 && !error ? (
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 text-sm text-slate-300">
-            No projects yet. Create your first one.
-          </div>
-        ) : null}
+      {!loading && projects.length === 0 && !error ? (
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 text-sm text-slate-300">
+          No projects yet. Create your first one.
+        </div>
+      ) : null}
 
-        <section className="grid gap-4 md:grid-cols-2">
-          {projects.map((project: { id: string; title: string; updatedAt?: string }) => (
-            <article
-              key={project.id}
-              className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 transition hover:border-slate-600"
-            >
-              <h2 className="text-lg font-semibold">{project.title}</h2>
-              <p className="mt-2 text-sm text-slate-400">Updated {formatDate(project.updatedAt)}</p>
-              <div className="mt-4 flex gap-3">
-                <Link
-                  to={`/editor?projectId=${project.id}`}
-                  className="rounded-full bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-900"
-                >
-                  Open
-                </Link>
-                <button
-                  type="button"
-                  className="rounded-full border border-rose-500/40 px-4 py-2 text-sm text-rose-200 transition hover:border-rose-400 disabled:opacity-60"
-                  onClick={() => setConfirmDelete({ id: project.id, title: project.title })}
-                  disabled={creating || deleting}
-                >
-                  Delete
-                </button>
-              </div>
-            </article>
-          ))}
-        </section>
-      </div>
+      <section className="grid gap-4 md:grid-cols-2">
+        {projects.map((project: { id: string; title: string; updatedAt?: string }) => (
+          <article
+            key={project.id}
+            className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 transition hover:border-slate-600"
+          >
+            <h2 className="text-lg font-semibold">{project.title}</h2>
+            <p className="mt-2 text-sm text-slate-400">Updated {formatDate(project.updatedAt)}</p>
+            <div className="mt-4 flex gap-3">
+              <Link
+                to={`/editor?projectId=${project.id}`}
+                className="rounded-full bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-900"
+              >
+                Open
+              </Link>
+              <button
+                type="button"
+                className="rounded-full border border-rose-500/40 px-4 py-2 text-sm text-rose-200 transition hover:border-rose-400 disabled:opacity-60"
+                onClick={() => setConfirmDelete({ id: project.id, title: project.title })}
+                disabled={creating || deleting}
+              >
+                Delete
+              </button>
+            </div>
+          </article>
+        ))}
+      </section>
+      <section className="grid gap-4 md:grid-cols-2">
+        {projects.map((project) => (
+          <article key={project.id} className="glass-card rounded-2xl p-5 transition hover:bg-white/12">
+            <h2 className="text-lg font-semibold text-white">{project.title}</h2>
+            <p className="mt-2 text-sm text-violet-200/70">Updated {formatDate(project.updatedAt)}</p>
+            <div className="mt-4 flex gap-3">
+              <Link
+                to={`/editor?projectId=${project.id}`}
+                className="rounded-full bg-linear-to-r from-violet-500 to-fuchsia-500 px-4 py-2 text-sm font-semibold text-white"
+              >
+                Open
+              </Link>
+            </div>
+          </article>
+        ))}
+      </section>
 
       {(creating || deletingId) && (
         <BlockingOverlay label={deletingId ? "Deleting project..." : "Creating project..."} />
@@ -253,14 +267,14 @@ export function ProjectsPage() {
 
       {createModalOpen ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
           role="presentation"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) closeCreateModal();
           }}
         >
           <div
-            className="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-xl"
+            className="w-full max-w-md rounded-2xl border border-white/10 bg-violet-950 p-6 shadow-2xl"
             role="dialog"
             aria-modal="true"
             aria-labelledby="create-project-title"
@@ -269,12 +283,12 @@ export function ProjectsPage() {
             <h2 id="create-project-title" className="text-lg font-semibold text-white">
               New project
             </h2>
-            <p className="mt-1 text-sm text-slate-400">Choose a name and canvas size. You can change the title later.</p>
+            <p className="mt-1 text-sm text-violet-200/70">Name your board and pick a canvas size.</p>
 
-            <label className="mt-5 block text-sm font-medium text-slate-300">
+            <label className="mt-5 block text-sm font-medium text-violet-100">
               Title
               <input
-                className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white outline-none focus:border-emerald-500"
+                className="mt-1.5 w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-white outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/30"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 autoFocus
@@ -282,24 +296,24 @@ export function ProjectsPage() {
             </label>
 
             <div className="mt-4 grid grid-cols-2 gap-3">
-              <label className="text-sm font-medium text-slate-300">
+              <label className="text-sm font-medium text-violet-100">
                 Width (px)
                 <input
                   type="number"
                   min={1}
                   max={10000}
-                  className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white outline-none focus:border-emerald-500"
+                  className="mt-1.5 w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-white outline-none focus:border-cyan-400"
                   value={width}
                   onChange={(e) => setWidth(Number(e.target.value))}
                 />
               </label>
-              <label className="text-sm font-medium text-slate-300">
+              <label className="text-sm font-medium text-violet-100">
                 Height (px)
                 <input
                   type="number"
                   min={1}
                   max={10000}
-                  className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white outline-none focus:border-emerald-500"
+                  className="mt-1.5 w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-white outline-none focus:border-cyan-400"
                   value={height}
                   onChange={(e) => setHeight(Number(e.target.value))}
                 />
@@ -311,7 +325,7 @@ export function ProjectsPage() {
             <div className="mt-6 flex justify-end gap-3">
               <button
                 type="button"
-                className="rounded-full border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:border-slate-400"
+                className="rounded-full border border-white/20 px-4 py-2 text-sm text-violet-100 hover:bg-white/10"
                 onClick={closeCreateModal}
                 disabled={creating}
               >
@@ -319,7 +333,7 @@ export function ProjectsPage() {
               </button>
               <button
                 type="button"
-                className="rounded-full bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-emerald-300 disabled:opacity-60"
+                className="rounded-full bg-linear-to-r from-violet-500 to-fuchsia-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
                 onClick={() => void handleSubmitCreate()}
                 disabled={creating}
               >
@@ -340,6 +354,6 @@ export function ProjectsPage() {
         onCancel={() => setConfirmDelete(null)}
         onConfirm={() => void handleDeleteProject()}
       />
-    </div>
+    </AppShell>
   );
 }

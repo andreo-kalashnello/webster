@@ -13,10 +13,10 @@ export function PrivateRoute({ children }: PrivateRouteProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-100">
+      <div className="flex min-h-screen items-center justify-center bg-app-gradient text-white">
         <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-slate-700 border-t-emerald-400" />
-          <p className="mt-4 text-sm text-slate-400">Loading...</p>
+          <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-white/20 border-t-cyan-300" />
+          <p className="mt-4 text-sm text-violet-100">Loading…</p>
         </div>
       </div>
     );
