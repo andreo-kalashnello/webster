@@ -1,15 +1,55 @@
-@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
 @import "tailwindcss";
 
 :root {
-	--brand-ink: #0b0f1a;
-	--brand-night: #121826;
-	--brand-glow: #1f3b4d;
-	--brand-accent: #37c98b;
+	--ink: #0f0a1f;
+	--ink-soft: #1a1430;
+	--surface: #ffffff;
+	--surface-muted: #f4f0ff;
+	--border: #e4dcf7;
+
+	--violet: #7c3aed;
+	--violet-light: #a78bfa;
+	--fuchsia: #d946ef;
+	--cyan: #06b6d4;
+	--amber: #f59e0b;
+	--coral: #fb7185;
+	--mint: #34d399;
+
+	--gradient-hero: linear-gradient(135deg, #faf5ff 0%, #ecfeff 45%, #fff7ed 100%);
+	--gradient-app: linear-gradient(160deg, #0f0a1f 0%, #1e1245 40%, #0c4a6e 100%);
+	--gradient-card: linear-gradient(145deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04));
 }
 
 body {
-	font-family: "Space Grotesk", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-	background-color: var(--brand-ink);
-	color: #f8fafc;
+	font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+	background: var(--gradient-hero);
+	color: var(--ink);
+	-webkit-font-smoothing: antialiased;
+}
+
+@layer utilities {
+	.bg-app-gradient {
+		background: var(--gradient-app);
+	}
+	.bg-hero-gradient {
+		background: var(--gradient-hero);
+	}
+	.text-gradient {
+		background: linear-gradient(90deg, var(--violet), var(--fuchsia), var(--cyan));
+		-webkit-background-clip: text;
+		background-clip: text;
+		color: transparent;
+	}
+	.glass-card {
+		background: var(--gradient-card);
+		backdrop-filter: blur(12px);
+		border: 1px solid rgba(255, 255, 255, 0.14);
+	}
+	.glass-card-light {
+		background: rgba(255, 255, 255, 0.72);
+		backdrop-filter: blur(16px);
+		border: 1px solid rgba(255, 255, 255, 0.85);
+		box-shadow: 0 20px 50px rgba(124, 58, 237, 0.08);
+	}
 }

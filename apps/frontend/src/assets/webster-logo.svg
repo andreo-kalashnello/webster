@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 138 38" fill="none" role="img" aria-label="Webster">
+  <defs>
+    <linearGradient id="w-fill" x1="0" y1="6" x2="138" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#8b5cf6" />
+      <stop offset="38%" stop-color="#e879f9" />
+      <stop offset="72%" stop-color="#f472b6" />
+      <stop offset="100%" stop-color="#22d3ee" />
+    </linearGradient>
+    <linearGradient id="w-shine" x1="0" y1="0" x2="0" y2="20" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#faf5ff" stop-opacity="0.85" />
+      <stop offset="100%" stop-color="#c4b5fd" stop-opacity="0" />
+    </linearGradient>
+    <linearGradient id="w-stroke" x1="0" y1="10" x2="138" y2="30" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#5b21b6" />
+      <stop offset="100%" stop-color="#0e7490" />
+    </linearGradient>
+    <linearGradient id="w-accent" x1="48" y1="30" x2="98" y2="30" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#a855f7" stop-opacity="0" />
+      <stop offset="50%" stop-color="#e879f9" />
+      <stop offset="100%" stop-color="#22d3ee" stop-opacity="0" />
+    </linearGradient>
+    <clipPath id="w-clip">
+      <rect width="138" height="17" />
+    </clipPath>
+    <filter id="w-glow" x="-20%" y="-30%" width="140%" height="160%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#7c3aed" flood-opacity="0.35" />
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#ec4899" flood-opacity="0.22" />
+    </filter>
+  </defs>
+  <g filter="url(#w-glow)" transform="skewX(-7)">
+    <text
+      x="3.5"
+      y="29"
+      fill="#4c1d95"
+      fill-opacity="0.45"
+      font-family="'Plus Jakarta Sans', system-ui, sans-serif"
+      font-size="29"
+      font-weight="800"
+      letter-spacing="-0.06em"
+    >
+      webster
+    </text>
+    <text
+      x="2"
+      y="27"
+      fill="url(#w-fill)"
+      stroke="url(#w-stroke)"
+      stroke-width="0.65"
+      paint-order="stroke fill"
+      font-family="'Plus Jakarta Sans', system-ui, sans-serif"
+      font-size="29"
+      font-weight="800"
+      letter-spacing="-0.06em"
+    >
+      webster
+    </text>
+    <text
+      x="2"
+      y="27"
+      fill="url(#w-shine)"
+      clip-path="url(#w-clip)"
+      font-family="'Plus Jakarta Sans', system-ui, sans-serif"
+      font-size="29"
+      font-weight="800"
+      letter-spacing="-0.06em"
+    >
+      webster
+    </text>
+  </g>
+  <path
+    d="M 54 31.5 Q 69 35.5 84 31.5"
+    stroke="url(#w-accent)"
+    stroke-width="2.25"
+    stroke-linecap="round"
+    fill="none"
+    opacity="0.9"
+  />
+</svg>

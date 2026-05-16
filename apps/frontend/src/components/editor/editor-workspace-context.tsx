@@ -6,6 +6,8 @@ export type EditorWorkspaceContextValue = {
   engine: CanvasEngine;
   projectId: string | null;
   projectTitle: string | null;
+  projectWidth: number;
+  projectHeight: number;
   autosaveLabel: string;
   saveNow: () => Promise<void>;
   /** Replace engine scene from API `Project.content` (after restore, etc.). */

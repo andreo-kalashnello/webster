@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@apollo/client/react";
+
+import { AppShell } from "@/components/layout/AppShell";
+import { AppPageSpinner } from "@/components/ui/PageSpinner";
 import {
   GET_CURRENT_USER,
   LOGOUT_MUTATION,
@@ -105,61 +108,46 @@ export function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-100">
-        <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-slate-700 border-t-emerald-400" />
-        </div>
-      </div>
+      <AppShell title="Your account" subtitle="Profile">
+        <AppPageSpinner />
+      </AppShell>
     );
   }
 
   if (error || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-100">
-        <div className="text-center">
-          <p className="text-rose-300">Failed to load profile</p>
-          <Link to="/login" className="mt-4 inline-block text-emerald-400">
-            Back to login
-          </Link>
-        </div>
-      </div>
+      <AppShell title="Your account" subtitle="Profile">
+        <p className="text-rose-200">Failed to load profile.</p>
+        <Link to="/login" className="mt-4 inline-block font-semibold text-cyan-300">
+          Back to login
+        </Link>
+      </AppShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <div className="mx-auto flex min-h-screen max-w-4xl flex-col gap-6 px-6 py-12">
-        <header className="flex items-center justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Profile</p>
-            <h1 className="mt-2 text-3xl font-semibold">Your account</h1>
-          </div>
-          <Link to="/" className="text-sm text-slate-300 hover:text-white">
-            Back to landing
-          </Link>
-        </header>
-
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+    <AppShell title="Your account" subtitle="Profile">
+        <section className="glass-card rounded-2xl p-6">
           <div className="grid gap-6 md:grid-cols-2">
             <div>
-              <p className="text-sm text-slate-400">Name</p>
+              <p className="text-sm text-violet-200/70">Name</p>
               <p className="mt-2 text-lg font-semibold">
                 {user.firstName} {user.lastName}
               </p>
             </div>
             <div>
-              <p className="text-sm text-slate-400">Email</p>
+              <p className="text-sm text-violet-200/70">Email</p>
               <p className="mt-2 text-lg font-semibold">{user.email}</p>
             </div>
             <div>
-              <p className="text-sm text-slate-400">Account status</p>
-              <p className="mt-2 text-lg font-semibold text-emerald-300">Active</p>
+              <p className="text-sm text-violet-200/70">Account status</p>
+              <p className="mt-2 text-lg font-semibold text-cyan-300">Active</p>
             </div>
             <div>
-              <p className="text-sm text-slate-400">Email verified</p>
+              <p className="text-sm text-violet-200/70">Email verified</p>
               <p
                 className={`mt-2 text-lg font-semibold ${
-                  user.isEmailVerified ? "text-emerald-300" : "text-slate-400"
+                  user.isEmailVerified ? "text-cyan-300" : "text-violet-300/60"
                 }`}
               >
                 {user.isEmailVerified ? "Yes" : "No"}
@@ -168,30 +156,29 @@ export function ProfilePage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
-          <h2 className="text-lg font-semibold">Quick actions</h2>
+        <section className="glass-card mt-6 rounded-2xl p-6">
+          <h2 className="text-lg font-semibold text-white">Quick actions</h2>
           <div className="mt-4 flex flex-wrap gap-3">
             <button
               onClick={() => setModal("edit")}
-              className="rounded-full border border-slate-600/60 px-4 py-2 text-sm text-slate-200 transition hover:border-slate-400"
+              className="rounded-full border border-white/20 px-4 py-2 text-sm text-violet-100 transition hover:bg-white/10"
             >
               Edit profile
             </button>
             <button
               onClick={() => setModal("password")}
-              className="rounded-full border border-slate-600/60 px-4 py-2 text-sm text-slate-200 transition hover:border-slate-400"
+              className="rounded-full border border-white/20 px-4 py-2 text-sm text-violet-100 transition hover:bg-white/10"
             >
               Change password
             </button>
             <button
               onClick={handleLogout}
-              className="rounded-full border border-rose-500/50 px-4 py-2 text-sm text-rose-200 transition hover:border-rose-400"
+              className="rounded-full border border-rose-400/40 px-4 py-2 text-sm text-rose-200 transition hover:bg-rose-500/10"
             >
               Sign out
             </button>
           </div>
         </section>
-      </div>
 
       {/* Edit Profile Modal */}
       {modal === "edit" && (
@@ -243,9 +230,9 @@ export function ProfilePage() {
                 <button
                   type="submit"
                   disabled={updateLoading}
-                  className="flex-1 rounded-full bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-900 disabled:opacity-50"
+                  className="flex-1 rounded-full bg-linear-to-r from-violet-500 to-fuchsia-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
                 >
-                  {updateLoading ? "Saving..." : "Save"}
+                  {updateLoading ? "Saving…" : "Save"}
                 </button>
               </div>
             </form>
@@ -319,15 +306,15 @@ export function ProfilePage() {
                 <button
                   type="submit"
                   disabled={passwordLoading}
-                  className="flex-1 rounded-full bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-900 disabled:opacity-50"
+                  className="flex-1 rounded-full bg-linear-to-r from-violet-500 to-fuchsia-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
                 >
-                  {passwordLoading ? "Saving..." : "Save"}
+                  {passwordLoading ? "Saving…" : "Save"}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-    </div>
+    </AppShell>
   );
 }

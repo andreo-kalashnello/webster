@@ -74,7 +74,7 @@ export const PropertiesPanel: FC = () => {
 
   if (selectedIds.length > 1) {
     return (
-      <aside className="z-40 flex w-full flex-col overflow-hidden border-l border-slate-200 bg-white shadow-lg sm:relative sm:top-0 sm:h-full sm:w-80">
+      <aside className="z-40 flex w-full flex-col overflow-hidden border-l border-violet-200/80 bg-white/95 shadow-lg backdrop-blur-md sm:relative sm:top-0 sm:h-full sm:w-80">
         <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
           <h3 className="font-semibold text-slate-900">{selectedIds.length} objects selected</h3>
           <button
@@ -135,7 +135,7 @@ export const PropertiesPanel: FC = () => {
   };
 
   return (
-    <aside className="z-40 flex w-full flex-col overflow-hidden border-l border-slate-200 bg-white shadow-lg sm:relative sm:top-0 sm:h-full sm:w-80">
+    <aside className="z-40 flex w-full flex-col overflow-hidden border-l border-violet-200/80 bg-white/95 shadow-lg backdrop-blur-md sm:relative sm:top-0 sm:h-full sm:w-80">
       <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
         <h3 className="font-semibold text-slate-900">Properties</h3>
         <button

@@ -12,7 +12,7 @@ type CanvasEditorLayoutProps = {
 
 export const CanvasEditorLayout: FC<CanvasEditorLayoutProps> = ({ canvas }) => {
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-white">
+    <div className="flex h-screen flex-col overflow-hidden bg-linear-to-br from-violet-50 via-white to-cyan-50/40">
       <EditorToolbar />
 
       <div className="relative flex min-h-0 flex-1 overflow-hidden">

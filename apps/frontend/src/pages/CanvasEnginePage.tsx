@@ -229,14 +229,19 @@ export function CanvasEnginePage() {
     r.setCamera({ x: 0, y: 0, zoom: 1 });
   }, []);
 
-  const projectTitle =
-    (projectData as { project?: { title?: string } } | null | undefined)?.project?.title ?? null;
+  const projectMeta = (projectData as { project?: { title?: string; width?: number; height?: number } } | null | undefined)
+    ?.project;
+  const projectTitle = projectMeta?.title ?? null;
+  const projectWidth = projectMeta?.width ?? 800;
+  const projectHeight = projectMeta?.height ?? 600;
 
   const workspaceValue = useMemo(
     () => ({
       engine,
       projectId,
       projectTitle,
+      projectWidth,
+      projectHeight,
       autosaveLabel,
       saveNow,
       applyProjectContent,
@@ -251,6 +256,8 @@ export function CanvasEnginePage() {
       engine,
       projectId,
       projectTitle,
+      projectWidth,
+      projectHeight,
       autosaveLabel,
       saveNow,
       applyProjectContent,
@@ -649,7 +656,7 @@ export function CanvasEnginePage() {
     const activeTool = engine.getRuntimeSnapshot().activeTool;
 
     if (activeTool === "text") {
-      const textValue = window.prompt("Введи текст", "Новый текст");
+      const textValue = window.prompt("Enter text", "New text");
       if (!textValue || textValue.trim().length === 0) {
         return;
       }
@@ -1167,7 +1174,7 @@ export function CanvasEnginePage() {
       return;
     }
 
-    const nextText = window.prompt("Редактирование текста", hitNode.data?.text ?? "") ?? "";
+    const nextText = window.prompt("Edit text", hitNode.data?.text ?? "") ?? "";
     if (nextText.trim().length === 0) {
       return;
     }

@@ -1,6 +1,7 @@
 import type { FC } from "react";
 import { useState } from "react";
 import { useMutation, useQuery } from "@apollo/client/react";
+import { useNavigate } from "react-router-dom";
 import { Download, FileJson, History, Image as ImageIcon, Save, Share2, Sparkles } from "lucide-react";
 
 import {
@@ -10,7 +11,10 @@ import {
   RESTORE_VERSION_MUTATION,
   VERSIONS_QUERY,
 } from "@/graphql/projects.graphql";
-import { CREATE_USER_TEMPLATE_MUTATION } from "@/graphql/templates.graphql";
+import {
+  CREATE_USER_TEMPLATE_MUTATION,
+  USER_TEMPLATES_QUERY,
+} from "@/graphql/templates.graphql";
 import { serializeSceneToJson } from "@/shared/lib/canvas-engine";
 import { useOptionalEditorWorkspace } from "./editor-workspace-context";
 
@@ -25,6 +29,7 @@ function downloadTextFile(filename: string, text: string): void {
 }
 
 export const EditorFooter: FC = () => {
+  const navigate = useNavigate();
   const workspace = useOptionalEditorWorkspace();
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -32,7 +37,9 @@ export const EditorFooter: FC = () => {
   const [restoreVersion] = useMutation(RESTORE_VERSION_MUTATION);
   const [exportPng] = useMutation(EXPORT_PNG_MUTATION);
   const [createShareLink] = useMutation(CREATE_SHARE_LINK_MUTATION);
-  const [createUserTemplate] = useMutation(CREATE_USER_TEMPLATE_MUTATION);
+  const [createUserTemplate] = useMutation(CREATE_USER_TEMPLATE_MUTATION, {
+    refetchQueries: [{ query: USER_TEMPLATES_QUERY }],
+  });
 
   const projectId = workspace?.projectId ?? null;
   const { data: versionsData, refetch: refetchVersions } = useQuery(VERSIONS_QUERY, {
@@ -42,7 +49,7 @@ export const EditorFooter: FC = () => {
 
   if (!workspace) {
     return (
-      <footer className="border-t border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm">
+      <footer className="border-t border-violet-200/60 bg-violet-950/95 px-4 py-3 text-sm text-violet-200 shadow-sm">
         Editor footer
       </footer>
     );
@@ -52,6 +59,8 @@ export const EditorFooter: FC = () => {
     engine,
     projectId: pid,
     projectTitle,
+    projectWidth,
+    projectHeight,
     autosaveLabel,
     saveNow,
     applyProjectContent,
@@ -150,14 +159,16 @@ export const EditorFooter: FC = () => {
         variables: {
           input: {
             title: title.trim(),
-            width: 800,
-            height: 600,
+            width: projectWidth,
+            height: projectHeight,
             content: JSON.parse(serializeSceneToJson(scene)) as Record<string, unknown>,
             isPublic: false,
           },
         },
       });
-      window.alert("Template saved.");
+      if (window.confirm("Template saved. Open My templates now?")) {
+        navigate("/templates");
+      }
     } catch (e) {
       window.alert(e instanceof Error ? e.message : "Template save failed");
     } finally {
@@ -166,10 +177,10 @@ export const EditorFooter: FC = () => {
   };
 
   return (
-    <footer className="border-t border-slate-200 bg-white px-4 py-3 shadow-sm">
+    <footer className="border-t border-violet-300/20 bg-linear-to-r from-violet-950 via-violet-900 to-fuchsia-950 px-4 py-3 text-violet-100 shadow-sm">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 flex-col gap-1 text-xs text-slate-600">
-          <div className="truncate font-medium text-slate-800">{projectTitle ?? "Project"}</div>
+        <div className="flex min-w-0 flex-col gap-1 text-xs text-violet-200/80">
+          <div className="truncate font-medium text-white">{projectTitle ?? "Project"}</div>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <span>{autosaveLabel || (busy ? `${busy}…` : "Ready")}</span>
             {pid ? (
@@ -202,7 +213,7 @@ export const EditorFooter: FC = () => {
             type="button"
             disabled={Boolean(busy)}
             onClick={() => void handleSave()}
-            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-violet-100 transition-colors hover:bg-white/10 disabled:opacity-50"
           >
             <Save size={16} />
             Save now
@@ -211,7 +222,7 @@ export const EditorFooter: FC = () => {
             type="button"
             disabled={!pid || Boolean(busy)}
             onClick={() => void handleSnapshot()}
-            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-violet-100 transition-colors hover:bg-white/10 disabled:opacity-50"
           >
             <Sparkles size={16} />
             Snapshot
@@ -220,7 +231,7 @@ export const EditorFooter: FC = () => {
             type="button"
             disabled={Boolean(busy)}
             onClick={handleExportJson}
-            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-violet-100 transition-colors hover:bg-white/10 disabled:opacity-50"
           >
             <FileJson size={16} />
             JSON
@@ -229,7 +240,7 @@ export const EditorFooter: FC = () => {
             type="button"
             disabled={Boolean(busy)}
             onClick={() => void handleExportPng()}
-            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-violet-100 transition-colors hover:bg-white/10 disabled:opacity-50"
           >
             <ImageIcon size={16} />
             PNG
@@ -238,7 +249,7 @@ export const EditorFooter: FC = () => {
             type="button"
             disabled={Boolean(busy)}
             onClick={() => void handleSaveTemplate()}
-            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-violet-100 transition-colors hover:bg-white/10 disabled:opacity-50"
           >
             <Download size={16} />
             Template
@@ -247,7 +258,7 @@ export const EditorFooter: FC = () => {
             type="button"
             disabled={!pid || Boolean(busy)}
             onClick={() => void handleShare()}
-            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-violet-100 transition-colors hover:bg-white/10 disabled:opacity-50"
           >
             <Share2 size={16} />
             Share
