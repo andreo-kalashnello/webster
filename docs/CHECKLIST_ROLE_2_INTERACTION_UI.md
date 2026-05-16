@@ -63,13 +63,15 @@
 
 - [x] Реализовать auth state/store (`user`, `isAuthenticated`, `loading`).
 - [x] Реализовать hydrate сессии через `me` query при старте приложения.
-- [ ] Реализовать формы `login/register` с client-side валидацией.
-- [ ] Реализовать `verifyEmail` flow по токену из URL.
-- [ ] Реализовать `requestPasswordReset/resetPassword` flow.
-- [ ] Реализовать `oauthLogin` flow (Google/Facebook/Github).
-- [ ] Реализовать `magic-link` flow (`requestMagicLink/verifyMagicLink`).
-- [ ] Реализовать 2FA шаг в login (ввод кода при включенной 2FA).
-- [ ] Реализовать `refreshToken` flow при истечении access token.
+- [x] Реализовать формы `login/register` с client-side валидацией.
+- [x] Реализовать `verifyEmail` flow по токену из URL.
+- [x] Реализовать `requestPasswordReset/resetPassword` flow.
+- [x] Реализовать `oauthLogin` flow (Google/Facebook/Github).
+- [x] Реализовать `magic-link` flow (`requestMagicLink/verifyMagicLink`).
+- [x] Реализовать 2FA шаг в login (ввод кода при включенной 2FA).
+- [x] Реализовать `refreshToken` flow при истечении access token.
+
+Примечание: OAuth-кнопки активируются при наличии `VITE_GOOGLE_CLIENT_ID`, `VITE_FACEBOOK_CLIENT_ID`, `VITE_GITHUB_CLIENT_ID` в frontend env.
 - [x] Реализовать logout с очисткой локального состояния и redirect.
 
 ## 3. Страницы и навигация
@@ -115,12 +117,12 @@
 
 ## 6. UX-устойчивость
 
-- [ ] Реализовать обработку loading/error состояний всех запросов.
-- [ ] Реализовать optimistic UI для безопасных операций.
-- [ ] Реализовать блокировки UI на критичных операциях.
-- [ ] Реализовать toast-уведомления об успехе/ошибке.
-- [ ] Реализовать confirm modal для удаления.
-- [ ] Реализовать unsaved changes guard при выходе.
+- [x] Реализовать обработку loading/error состояний всех запросов.
+- [x] Реализовать optimistic UI для безопасных операций.
+- [x] Реализовать блокировки UI на критичных операциях.
+- [x] Реализовать toast-уведомления об успехе/ошибке.
+- [x] Реализовать confirm modal для удаления.
+- [x] Реализовать unsaved changes guard при выходе.
 
 ## 7. Доступность и качество интерфейса
 

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useSearchParams, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation } from "@apollo/client/react";
 import { VERIFY_EMAIL_MUTATION } from "../graphql/auth.graphql";
 
@@ -7,9 +7,36 @@ export function VerifyEmailPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [token, setToken] = useState(searchParams.get("token") || "");
+  const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [error, setError] = useState("");
 
   const [verifyEmail, { loading }] = useMutation(VERIFY_EMAIL_MUTATION);
+
+  useEffect(() => {
+    if (!token) {
+      return;
+    }
+
+    let cancelled = false;
+    async function runVerification() {
+      try {
+        await verifyEmail({ variables: { token } });
+        if (!cancelled) {
+          setStatus("success");
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setStatus("error");
+          setError(err instanceof Error ? err.message : "Failed to verify email");
+        }
+      }
+    }
+
+    runVerification();
+    return () => {
+      cancelled = true;
+    };
+  }, [token, verifyEmail]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -24,8 +51,10 @@ export function VerifyEmailPage() {
       await verifyEmail({
         variables: { token },
       });
+      setStatus("success");
       navigate("/profile", { replace: true });
     } catch (err) {
+      setStatus("error");
       setError(err instanceof Error ? err.message : "Failed to verify email");
     }
   };
@@ -48,11 +77,17 @@ export function VerifyEmailPage() {
               name="token"
               value={token}
               onChange={event => setToken(event.target.value)}
-              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-slate-900"
+              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-slate-100"
               placeholder="Paste token"
               required
             />
           </div>
+
+          {status === "success" && (
+            <div className="rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-100">
+              Email verified. You can continue to your profile.
+            </div>
+          )}
 
           {error && (
             <div className="rounded-xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-100">

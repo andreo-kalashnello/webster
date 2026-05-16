@@ -13,6 +13,8 @@ import {
 import { CREATE_USER_TEMPLATE_MUTATION } from "@/graphql/templates.graphql";
 import { serializeSceneToJson } from "@/shared/lib/canvas-engine";
 import { useOptionalEditorWorkspace } from "./editor-workspace-context";
+import { useToastStore } from "@/shared/stores/toast.store";
+import { BlockingOverlay } from "@/components/ui/BlockingOverlay";
 
 function downloadTextFile(filename: string, text: string): void {
   const blob = new Blob([text], { type: "application/json;charset=utf-8" });
@@ -27,6 +29,7 @@ function downloadTextFile(filename: string, text: string): void {
 export const EditorFooter: FC = () => {
   const workspace = useOptionalEditorWorkspace();
   const [busy, setBusy] = useState<string | null>(null);
+  const pushToast = useToastStore((state) => state.pushToast);
 
   const [createVersion] = useMutation(CREATE_VERSION_MUTATION);
   const [restoreVersion] = useMutation(RESTORE_VERSION_MUTATION);
@@ -35,7 +38,12 @@ export const EditorFooter: FC = () => {
   const [createUserTemplate] = useMutation(CREATE_USER_TEMPLATE_MUTATION);
 
   const projectId = workspace?.projectId ?? null;
-  const { data: versionsData, refetch: refetchVersions } = useQuery(VERSIONS_QUERY, {
+  const {
+    data: versionsData,
+    refetch: refetchVersions,
+    loading: versionsLoading,
+    error: versionsError,
+  } = useQuery(VERSIONS_QUERY, {
     variables: { projectId: projectId ?? "" },
     skip: !projectId,
   });
@@ -63,6 +71,13 @@ export const EditorFooter: FC = () => {
     setBusy("save");
     try {
       await saveNow();
+      pushToast({ title: "Project saved", tone: "success" });
+    } catch (e) {
+      pushToast({
+        title: "Save failed",
+        message: e instanceof Error ? e.message : "Unable to save project",
+        tone: "error",
+      });
     } finally {
       setBusy(null);
     }
@@ -75,8 +90,13 @@ export const EditorFooter: FC = () => {
     try {
       await createVersion({ variables: { projectId: pid, label: label || undefined } });
       await refetchVersions();
+      pushToast({ title: "Snapshot created", tone: "success" });
     } catch (e) {
-      window.alert(e instanceof Error ? e.message : "Failed to create version");
+      pushToast({
+        title: "Snapshot failed",
+        message: e instanceof Error ? e.message : "Failed to create version",
+        tone: "error",
+      });
     } finally {
       setBusy(null);
     }
@@ -91,8 +111,13 @@ export const EditorFooter: FC = () => {
       const content = (res.data as { restoreVersion?: { content?: unknown } })?.restoreVersion?.content;
       applyProjectContent(content ?? null);
       await refetchVersions();
+      pushToast({ title: "Version restored", tone: "success" });
     } catch (e) {
-      window.alert(e instanceof Error ? e.message : "Restore failed");
+      pushToast({
+        title: "Restore failed",
+        message: e instanceof Error ? e.message : "Restore failed",
+        tone: "error",
+      });
     } finally {
       setBusy(null);
     }
@@ -105,7 +130,11 @@ export const EditorFooter: FC = () => {
 
   const handleExportPng = async () => {
     if (!pid) {
-      window.alert("Open a saved project to export PNG from the server.");
+      pushToast({
+        title: "Export unavailable",
+        message: "Open a saved project to export PNG from the server.",
+        tone: "warning",
+      });
       return;
     }
     setBusy("png");
@@ -115,9 +144,14 @@ export const EditorFooter: FC = () => {
       const url = (res.data as { exportPng?: { url?: string } })?.exportPng?.url;
       if (url) {
         window.open(url, "_blank", "noopener,noreferrer");
+        pushToast({ title: "PNG export ready", tone: "success" });
       }
     } catch (e) {
-      window.alert(e instanceof Error ? e.message : "Export failed");
+      pushToast({
+        title: "Export failed",
+        message: e instanceof Error ? e.message : "Export failed",
+        tone: "error",
+      });
     } finally {
       setBusy(null);
     }
@@ -131,10 +165,14 @@ export const EditorFooter: FC = () => {
       const url = (res.data as { createShareLink?: { url?: string } })?.createShareLink?.url;
       if (url) {
         await navigator.clipboard.writeText(url);
-        window.alert(`Share link copied to clipboard:\n${url}`);
+        pushToast({ title: "Share link copied", message: url, tone: "success" });
       }
     } catch (e) {
-      window.alert(e instanceof Error ? e.message : "Share link failed");
+      pushToast({
+        title: "Share failed",
+        message: e instanceof Error ? e.message : "Share link failed",
+        tone: "error",
+      });
     } finally {
       setBusy(null);
     }
@@ -157,9 +195,13 @@ export const EditorFooter: FC = () => {
           },
         },
       });
-      window.alert("Template saved.");
+      pushToast({ title: "Template saved", tone: "success" });
     } catch (e) {
-      window.alert(e instanceof Error ? e.message : "Template save failed");
+      pushToast({
+        title: "Template save failed",
+        message: e instanceof Error ? e.message : "Template save failed",
+        tone: "error",
+      });
     } finally {
       setBusy(null);
     }
@@ -167,11 +209,32 @@ export const EditorFooter: FC = () => {
 
   return (
     <footer className="border-t border-slate-200 bg-white px-4 py-3 shadow-sm">
+      {busy ? (
+        <BlockingOverlay
+          label={
+            busy === "save"
+              ? "Saving project..."
+              : busy === "version"
+                ? "Creating snapshot..."
+                : busy === "restore"
+                  ? "Restoring version..."
+                  : busy === "png"
+                    ? "Exporting PNG..."
+                    : busy === "share"
+                      ? "Creating share link..."
+                      : busy === "template"
+                        ? "Saving template..."
+                        : "Working..."
+          }
+        />
+      ) : null}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 flex-col gap-1 text-xs text-slate-600">
           <div className="truncate font-medium text-slate-800">{projectTitle ?? "Project"}</div>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <span>{autosaveLabel || (busy ? `${busy}…` : "Ready")}</span>
+            <span>
+              {autosaveLabel || (busy ? `${busy}…` : versionsLoading ? "Loading snapshots…" : "Ready")}
+            </span>
             {pid ? (
               <span className="flex items-center gap-1 text-slate-500">
                 <History size={12} />
@@ -179,6 +242,9 @@ export const EditorFooter: FC = () => {
               </span>
             ) : null}
           </div>
+          {versionsError ? (
+            <div className="text-[11px] text-rose-500">Failed to load snapshots.</div>
+          ) : null}
           {pid && versions.length > 0 ? (
             <div className="flex max-w-full flex-wrap gap-1 pt-1">
               {versions.slice(0, 8).map((v) => (

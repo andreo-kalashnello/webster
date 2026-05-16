@@ -4,9 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 
 import {
   CREATE_PROJECT_MUTATION,
+  DELETE_PROJECT_MUTATION,
   PROJECTS_QUERY,
 } from "../graphql/projects.graphql";
 import { createEmptySerializableSceneState } from "@/shared/lib/canvas-engine";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { BlockingOverlay } from "@/components/ui/BlockingOverlay";
+import { useToastStore } from "@/shared/stores/toast.store";
 
 const DEFAULT_PAGINATION = { page: 1, limit: 12 };
 
@@ -27,12 +31,64 @@ export function ProjectsPage() {
   const [width, setWidth] = useState(800);
   const [height, setHeight] = useState(600);
   const [formError, setFormError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; title: string } | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const pushToast = useToastStore((state) => state.pushToast);
 
   const { data, loading, error } = useQuery(PROJECTS_QUERY, {
     variables: { pagination: DEFAULT_PAGINATION },
   });
   const [createProject, { loading: creating }] = useMutation(CREATE_PROJECT_MUTATION, {
     refetchQueries: [{ query: PROJECTS_QUERY, variables: { pagination: DEFAULT_PAGINATION } }],
+    onError: (err) => {
+      pushToast({
+        title: "Project creation failed",
+        message: err.message,
+        tone: "error",
+      });
+    },
+  });
+
+  const [deleteProject, { loading: deleting }] = useMutation(DELETE_PROJECT_MUTATION, {
+    update: (cache, { data: result }, options) => {
+      if (!result?.deleteProject) {
+        return;
+      }
+
+      const deletedId = options.variables?.id as string | undefined;
+      if (!deletedId) {
+        return;
+      }
+
+      cache.updateQuery(
+        { query: PROJECTS_QUERY, variables: { pagination: DEFAULT_PAGINATION } },
+        (prev) => {
+          if (!prev?.projects) {
+            return prev;
+          }
+
+          const nextItems = prev.projects.items.filter(
+            (project: { id: string }) => project.id !== deletedId,
+          );
+
+          return {
+            ...prev,
+            projects: {
+              ...prev.projects,
+              items: nextItems,
+              total: Math.max(0, (prev.projects.total ?? nextItems.length) - 1),
+            },
+          };
+        },
+      );
+    },
+    onError: (err) => {
+      pushToast({
+        title: "Delete failed",
+        message: err.message,
+        tone: "error",
+      });
+    },
   });
 
   const projects = data?.projects?.items ?? [];
@@ -75,23 +131,49 @@ export function ProjectsPage() {
     }
 
     setFormError(null);
-    const result = await createProject({
-      variables: {
-        input: {
-          title: trimmed,
-          width: Math.floor(width),
-          height: Math.floor(height),
-          content: EMPTY_SCENE,
+    try {
+      const result = await createProject({
+        variables: {
+          input: {
+            title: trimmed,
+            width: Math.floor(width),
+            height: Math.floor(height),
+            content: EMPTY_SCENE,
+          },
         },
-      },
-    });
+      });
 
-    const projectId = result.data?.createProject?.id as string | undefined;
-    if (projectId) {
-      closeCreateModal();
-      navigate(`/editor?projectId=${projectId}`);
-    } else {
-      setFormError("Project was not created. Try again.");
+      const projectId = result.data?.createProject?.id as string | undefined;
+      if (projectId) {
+        closeCreateModal();
+        pushToast({ title: "Project created", tone: "success" });
+        navigate(`/editor?projectId=${projectId}`);
+      } else {
+        setFormError("Project was not created. Try again.");
+      }
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Project was not created. Try again.");
+    }
+  };
+
+  const handleDeleteProject = async () => {
+    if (!confirmDelete) {
+      return;
+    }
+
+    const { id, title: projectTitle } = confirmDelete;
+    setDeletingId(id);
+    try {
+      await deleteProject({
+        variables: { id },
+        optimisticResponse: { deleteProject: true },
+      });
+      pushToast({ title: "Project deleted", message: projectTitle, tone: "success" });
+    } catch {
+      // handled in onError
+    } finally {
+      setDeletingId(null);
+      setConfirmDelete(null);
     }
   };
 
@@ -151,14 +233,23 @@ export function ProjectsPage() {
                 >
                   Open
                 </Link>
-                <button className="rounded-full border border-slate-700/60 px-4 py-2 text-sm text-slate-200">
-                  Share
+                <button
+                  type="button"
+                  className="rounded-full border border-rose-500/40 px-4 py-2 text-sm text-rose-200 transition hover:border-rose-400 disabled:opacity-60"
+                  onClick={() => setConfirmDelete({ id: project.id, title: project.title })}
+                  disabled={creating || deleting}
+                >
+                  Delete
                 </button>
               </div>
             </article>
           ))}
         </section>
       </div>
+
+      {(creating || deletingId) && (
+        <BlockingOverlay label={deletingId ? "Deleting project..." : "Creating project..."} />
+      )}
 
       {createModalOpen ? (
         <div
@@ -238,6 +329,17 @@ export function ProjectsPage() {
           </div>
         </div>
       ) : null}
+
+      <ConfirmDialog
+        open={Boolean(confirmDelete)}
+        title="Delete project?"
+        description="This will permanently remove the project and its versions."
+        confirmLabel="Delete"
+        confirmTone="danger"
+        busy={Boolean(deletingId)}
+        onCancel={() => setConfirmDelete(null)}
+        onConfirm={() => void handleDeleteProject()}
+      />
     </div>
   );
 }

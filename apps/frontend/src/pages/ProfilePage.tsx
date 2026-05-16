@@ -8,12 +8,14 @@ import {
   UPDATE_PROFILE_MUTATION,
 } from "../graphql/auth.graphql";
 import { useAuthStore } from "../shared/stores/auth.store";
+import { useToastStore } from "@/shared/stores/toast.store";
 
 type Modal = "edit" | "password" | null;
 
 export function ProfilePage() {
   const navigate = useNavigate();
   const clearUser = useAuthStore((state) => state.clearUser);
+  const pushToast = useToastStore((state) => state.pushToast);
   const { data, loading, error } = useQuery(GET_CURRENT_USER);
   const [modal, setModal] = useState<Modal>(null);
   const [editError, setEditError] = useState("");
@@ -24,7 +26,11 @@ export function ProfilePage() {
   const [logout] = useMutation(LOGOUT_MUTATION, {
     onCompleted: () => {
       clearUser();
+      pushToast({ title: "Signed out", tone: "info" });
       navigate("/login", { replace: true });
+    },
+    onError: (err) => {
+      pushToast({ title: "Sign out failed", message: err.message, tone: "error" });
     },
   });
 
@@ -34,6 +40,10 @@ export function ProfilePage() {
       onCompleted: () => {
         setModal(null);
         setPasswordError("");
+        pushToast({ title: "Password updated", tone: "success" });
+      },
+      onError: (err) => {
+        pushToast({ title: "Password update failed", message: err.message, tone: "error" });
       },
     }
   );
@@ -44,6 +54,10 @@ export function ProfilePage() {
       onCompleted: () => {
         setModal(null);
         setEditError("");
+        pushToast({ title: "Profile updated", tone: "success" });
+      },
+      onError: (err) => {
+        pushToast({ title: "Profile update failed", message: err.message, tone: "error" });
       },
     }
   );

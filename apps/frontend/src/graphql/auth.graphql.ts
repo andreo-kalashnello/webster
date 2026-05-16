@@ -16,6 +16,14 @@ export const LOGIN_MUTATION = gql`
   }
 `;
 
+export const REFRESH_TOKEN_MUTATION = gql`
+  mutation RefreshToken {
+    refreshToken {
+      message
+    }
+  }
+`;
+
 export const GET_CURRENT_USER = gql`
   query GetCurrentUser {
     me {
@@ -32,16 +40,46 @@ export const GET_CURRENT_USER = gql`
 export const VERIFY_EMAIL_MUTATION = gql`
   mutation VerifyEmail($token: String!) {
     verifyEmail(token: $token) {
-      id
-      email
-      isEmailVerified
+      message
+    }
+  }
+`;
+
+export const REQUEST_PASSWORD_RESET_MUTATION = gql`
+  mutation RequestPasswordReset($input: RequestPasswordResetDto!) {
+    requestPasswordReset(input: $input) {
+      message
     }
   }
 `;
 
 export const RESET_PASSWORD_MUTATION = gql`
-  mutation ResetPassword($token: String!, $newPassword: String!) {
-    resetPassword(token: $token, newPassword: $newPassword) {
+  mutation ResetPassword($input: ResetPasswordDto!) {
+    resetPassword(input: $input) {
+      message
+    }
+  }
+`;
+
+export const REQUEST_MAGIC_LINK_MUTATION = gql`
+  mutation RequestMagicLink($input: RequestMagicLinkDto!) {
+    requestMagicLink(input: $input) {
+      message
+    }
+  }
+`;
+
+export const VERIFY_MAGIC_LINK_MUTATION = gql`
+  mutation VerifyMagicLink($token: String!) {
+    verifyMagicLink(token: $token) {
+      message
+    }
+  }
+`;
+
+export const OAUTH_LOGIN_MUTATION = gql`
+  mutation OAuthLogin($input: OAuthLoginDto!) {
+    oauthLogin(input: $input) {
       message
     }
   }

@@ -159,6 +159,7 @@ export function CanvasEnginePage() {
   const [autosaveProject] = useMutation(AUTOSAVE_PROJECT_MUTATION);
   const [autosaveLabel, setAutosaveLabel] = useState<string>("");
   const [editorGridEnabled, setEditorGridEnabled] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   const [debug, setDebug] = useState<EngineDebugState>(() => {
     const runtime = engine.getRuntimeSnapshot();
@@ -193,6 +194,7 @@ export function CanvasEnginePage() {
       variables: { id: projectId, content: JSON.parse(json) as Record<string, unknown> },
     });
     lastSentJsonRef.current = json;
+    setHasUnsavedChanges(false);
     setAutosaveLabel("Saved");
     window.setTimeout(() => {
       setAutosaveLabel((s) => (s === "Saved" ? "" : s));
@@ -205,6 +207,7 @@ export function CanvasEnginePage() {
       engine.replaceScene(scene, { recordHistory: false });
       engine.setSelection([]);
       lastSentJsonRef.current = engine.exportSceneJson();
+      setHasUnsavedChanges(false);
     },
     [engine],
   );
@@ -277,6 +280,7 @@ export function CanvasEnginePage() {
       engine.replaceScene(createRendererDemoScene(), { recordHistory: false });
       engine.setSelection(["node-rect"]);
       setAutosaveLabel("");
+      setHasUnsavedChanges(false);
       return;
     }
 
@@ -294,6 +298,7 @@ export function CanvasEnginePage() {
       engine.replaceScene(createEmptySerializableSceneState(), { recordHistory: false });
       engine.setSelection([]);
       lastSentJsonRef.current = engine.exportSceneJson();
+      setHasUnsavedChanges(false);
       setAutosaveLabel("");
       return;
     }
@@ -307,6 +312,7 @@ export function CanvasEnginePage() {
     engine.replaceScene(scene, { recordHistory: false });
     engine.setSelection([]);
     lastSentJsonRef.current = engine.exportSceneJson();
+    setHasUnsavedChanges(false);
     setAutosaveLabel("");
   }, [standaloneMode, projectId, projectLoading, projectQueryError, projectData, engine]);
 
@@ -334,6 +340,7 @@ export function CanvasEnginePage() {
       })
         .then(() => {
           lastSentJsonRef.current = json;
+          setHasUnsavedChanges(false);
           setAutosaveLabel("Saved");
           window.setTimeout(() => {
             setAutosaveLabel((s) => (s === "Saved" ? "" : s));
@@ -353,12 +360,58 @@ export function CanvasEnginePage() {
 
     return () => {
       unsub();
-      if (autosaveTimerRef.current) {
-        window.clearTimeout(autosaveTimerRef.current);
-        autosaveTimerRef.current = null;
-      }
+        if (autosaveTimerRef.current) {
+          window.clearTimeout(autosaveTimerRef.current);
+          autosaveTimerRef.current = null;
+        }
     };
   }, [standaloneMode, projectId, projectLoading, projectQueryError, projectData, engine, autosaveProject]);
+
+  useEffect(() => {
+    if (standaloneMode) {
+      return;
+    }
+
+    const off = engine.events.on("scene:changed", () => {
+      const json = engine.exportSceneJson();
+      setHasUnsavedChanges(json !== lastSentJsonRef.current);
+    });
+
+    return () => {
+      off();
+    };
+  }, [engine, standaloneMode]);
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) {
+      return;
+    }
+
+    const handler = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handler);
+    return () => {
+      window.removeEventListener("beforeunload", handler);
+    };
+  }, [hasUnsavedChanges]);
+
+  const confirmNavigation = useCallback(
+    (nextPath: string) => {
+      if (!hasUnsavedChanges) {
+        navigate(nextPath);
+        return;
+      }
+
+      const allow = window.confirm("You have unsaved changes. Leave anyway?");
+      if (allow) {
+        navigate(nextPath);
+      }
+    },
+    [hasUnsavedChanges, navigate],
+  );
 
   useEffect(() => {
     if (!canvasRef.current) {
@@ -498,20 +551,29 @@ export function CanvasEnginePage() {
 
       if ((event.key === "Delete" || event.key === "Backspace") && hasSelection) {
         event.preventDefault();
-        engine.batchUpdate(({ removeNode }) => {
-          for (const nodeId of selectedNodeIds) {
-            removeNode(nodeId);
-          }
-        }, { history: { label: "delete-selection" } });
-        engine.setSelection([]);
+        const scene = engine.getSerializableState();
+        const deletable = selectedNodeIds.filter((id) => !scene.nodes[id]?.data?.locked);
+        if (deletable.length > 0) {
+          engine.batchUpdate(({ removeNode }) => {
+            for (const nodeId of deletable) {
+              removeNode(nodeId);
+            }
+          }, { history: { label: "delete-selection" } });
+        }
+        engine.setSelection(selectedNodeIds.filter((id) => scene.nodes[id]?.data?.locked));
         return;
       }
 
       if (hasModifier && !event.shiftKey && event.key.toLowerCase() === "g" && hasSelection) {
         event.preventDefault();
+        const scene = engine.getSerializableState();
+        const eligible = selectedNodeIds.filter((id) => !scene.nodes[id]?.data?.locked);
+        if (eligible.length === 0) {
+          return;
+        }
         const groupId = `group-${Date.now()}`;
         engine.batchUpdate(({ updateNode }) => {
-          for (const nodeId of selectedNodeIds) {
+          for (const nodeId of eligible) {
             updateNode(nodeId, (prevNode) => ({
               ...prevNode,
               data: {
@@ -526,14 +588,24 @@ export function CanvasEnginePage() {
 
       if ((hasModifier && event.shiftKey && event.key.toLowerCase() === "d") && hasSelection) {
         event.preventDefault();
-        duplicateSelection(engine, selectedNodeIds);
+        const scene = engine.getSerializableState();
+        const eligible = selectedNodeIds.filter((id) => !scene.nodes[id]?.data?.locked);
+        if (eligible.length === 0) {
+          return;
+        }
+        duplicateSelection(engine, eligible);
 
         return;
       }
 
       if (!hasModifier && !event.shiftKey && event.key.toLowerCase() === "d" && hasSelection) {
         event.preventDefault();
-        duplicateSelection(engine, selectedNodeIds);
+        const scene = engine.getSerializableState();
+        const eligible = selectedNodeIds.filter((id) => !scene.nodes[id]?.data?.locked);
+        if (eligible.length === 0) {
+          return;
+        }
+        duplicateSelection(engine, eligible);
         return;
       }
 
@@ -609,8 +681,13 @@ export function CanvasEnginePage() {
 
       if (arrowMove && hasSelection) {
         event.preventDefault();
+        const scene = engine.getSerializableState();
+        const eligible = selectedNodeIds.filter((id) => !scene.nodes[id]?.data?.locked);
+        if (eligible.length === 0) {
+          return;
+        }
         engine.batchUpdate(({ updateNode }) => {
-          for (const nodeId of selectedNodeIds) {
+          for (const nodeId of eligible) {
             updateNode(nodeId, (prevNode) => ({
               ...prevNode,
               bounds: {
@@ -769,14 +846,16 @@ export function CanvasEnginePage() {
     const runtime = engine.getRuntimeSnapshot();
     const selectedNodeId = runtime.selectedNodeIds.length === 1 ? runtime.selectedNodeIds[0] : null;
     const selectedNode = selectedNodeId ? scene.nodes[selectedNodeId] : null;
+    const selectedNodeLocked = selectedNode?.data?.locked;
 
-    if (selectedNode) {
+    if (selectedNode && !selectedNodeLocked) {
       const camera = renderer.getCamera();
       const handleSizeWorld = HANDLE_SIZE / camera.zoom;
       const rotateOffsetWorld = ROTATE_HANDLE_OFFSET / camera.zoom;
       const rotateRadiusWorld = ROTATE_HANDLE_RADIUS / camera.zoom;
-      const center = getRectCenter(selectedNode.bounds);
-      const rotateHandle = getRotateHandlePoint(selectedNode.bounds, rotateOffsetWorld);
+      const worldBounds = getNodeWorldBounds(selectedNode);
+      const center = getRectCenter(worldBounds);
+      const rotateHandle = getRotateHandlePoint(worldBounds, rotateOffsetWorld);
 
       if (isPointInCircle(worldPoint, rotateHandle, rotateRadiusWorld)) {
         const startAngle = radiansToDegrees(Math.atan2(worldPoint.y - center.y, worldPoint.x - center.x));
@@ -873,7 +952,11 @@ export function CanvasEnginePage() {
     }
 
     const initialPositions: Record<NodeId, { x: number; y: number; originalPoints?: Point[] }> = {};
-    for (const id of nextSelection) {
+    const draggableSelection = nextSelection.filter((id) => !scene.nodes[id]?.data?.locked);
+    if (draggableSelection.length === 0) {
+      return;
+    }
+    for (const id of draggableSelection) {
       const node = scene.nodes[id];
       if (node) {
         initialPositions[id] = {
@@ -887,7 +970,7 @@ export function CanvasEnginePage() {
     dragStateRef.current = {
       mode: "node",
       pointerId: event.pointerId,
-      nodeIds: nextSelection,
+      nodeIds: draggableSelection,
       startWorld: worldPoint,
       initialPositions,
     };
@@ -1130,6 +1213,10 @@ export function CanvasEnginePage() {
           nodeBox.y < boxBounds.y + boxBounds.height &&
           nodeBox.y + nodeBox.height > boxBounds.y;
 
+        if (node.data?.hidden || node.data?.locked) {
+          continue;
+        }
+
         if (isInside) {
           selectedIds.push(nodeId);
         }
@@ -1336,7 +1423,7 @@ export function CanvasEnginePage() {
       ? getResizeHandles(selectedNode.bounds)
       : [];
   const rotateHandle = showHandles && selectedNode
-    ? getRotateHandlePoint(selectedNode.bounds, ROTATE_HANDLE_OFFSET / camera.zoom)
+    ? getRotateHandlePoint(getNodeWorldBounds(selectedNode), ROTATE_HANDLE_OFFSET / camera.zoom)
     : null;
 
   const canvasSurface = (
@@ -1360,9 +1447,13 @@ export function CanvasEnginePage() {
 
       {!standaloneMode && projectId && !projectLoading && !projectQueryError ? (
         <div className="pointer-events-none absolute right-4 top-4 z-20 text-right text-xs text-slate-600">
-          <Link className="pointer-events-auto font-medium text-emerald-700 underline-offset-2 hover:underline" to="/projects">
+          <button
+            type="button"
+            className="pointer-events-auto font-medium text-emerald-700 underline-offset-2 hover:underline"
+            onClick={() => confirmNavigation("/projects")}
+          >
             All projects
-          </Link>
+          </button>
         </div>
       ) : null}
 

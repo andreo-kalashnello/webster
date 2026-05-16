@@ -95,6 +95,27 @@ export const PropertiesPanel: FC = () => {
     return null;
   }
 
+  if (node.data?.locked) {
+    return (
+      <aside className="z-40 flex w-full flex-col overflow-hidden border-l border-slate-200 bg-white shadow-lg sm:relative sm:top-0 sm:h-full sm:w-80">
+        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+          <h3 className="font-semibold text-slate-900">Properties</h3>
+          <button
+            type="button"
+            onClick={() => engine.setSelection([])}
+            className="rounded-lg p-2 transition-colors hover:bg-slate-100"
+            title="Close (Esc)"
+          >
+            <X size={18} className="text-slate-700" />
+          </button>
+        </div>
+        <div className="flex-1 px-4 py-4 text-sm text-slate-600">
+          This layer is locked. Unlock it in the Layers panel to edit properties.
+        </div>
+      </aside>
+    );
+  }
+
   const props = nodeToPanel(node);
 
   const updateBounds = (patch: Partial<{ x: number; y: number; width: number; height: number }>) => {

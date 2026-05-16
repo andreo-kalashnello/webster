@@ -5,6 +5,8 @@ import {
   BASE_TEMPLATES_QUERY,
   CREATE_PROJECT_FROM_TEMPLATE_MUTATION,
 } from "../graphql/templates.graphql";
+import { BlockingOverlay } from "@/components/ui/BlockingOverlay";
+import { useToastStore } from "@/shared/stores/toast.store";
 
 function formatDate(value?: string) {
   if (!value) return "Unknown";
@@ -15,20 +17,37 @@ function formatDate(value?: string) {
 
 export function TemplatesPage() {
   const navigate = useNavigate();
+  const pushToast = useToastStore((state) => state.pushToast);
   const { data, loading, error } = useQuery(BASE_TEMPLATES_QUERY);
   const [createFromTemplate, { loading: creating }] = useMutation(
     CREATE_PROJECT_FROM_TEMPLATE_MUTATION,
+    {
+      onError: (err) => {
+        pushToast({
+          title: "Template failed",
+          message: err.message,
+          tone: "error",
+        });
+      },
+    },
   );
 
   const templates = data?.baseTemplates ?? [];
 
   const handleUseTemplate = async (templateId: string, title?: string) => {
-    const result = await createFromTemplate({
-      variables: { templateId, title },
-    });
+    try {
+      const result = await createFromTemplate({
+        variables: { templateId, title },
+      });
 
-    const projectId = result.data?.createProjectFromTemplate?.id as string | undefined;
-    navigate(projectId ? `/editor?projectId=${projectId}` : "/editor");
+      const projectId = result.data?.createProjectFromTemplate?.id as string | undefined;
+      if (projectId) {
+        pushToast({ title: "Project created", tone: "success" });
+      }
+      navigate(projectId ? `/editor?projectId=${projectId}` : "/editor");
+    } catch {
+      // handled in onError
+    }
   };
 
   return (
@@ -83,6 +102,8 @@ export function TemplatesPage() {
           ))}
         </section>
       </div>
+
+      {creating ? <BlockingOverlay label="Preparing template..." /> : null}
     </div>
   );
 }

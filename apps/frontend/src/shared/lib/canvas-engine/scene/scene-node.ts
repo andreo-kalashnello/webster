@@ -14,6 +14,10 @@ export interface SceneNodeData {
   src?: string;
   points?: Point[];
   groupId?: string;
+  groupLabel?: string;
+  label?: string;
+  hidden?: boolean;
+  locked?: boolean;
 }
 
 export interface SceneNode {

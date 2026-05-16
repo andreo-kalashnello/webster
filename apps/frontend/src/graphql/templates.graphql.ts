@@ -47,3 +47,9 @@ export const CREATE_USER_TEMPLATE_MUTATION = gql`
     }
   }
 `;
+
+export const DELETE_USER_TEMPLATE_MUTATION = gql`
+  mutation DeleteUserTemplate($id: ID!) {
+    deleteUserTemplate(id: $id)
+  }
+`;

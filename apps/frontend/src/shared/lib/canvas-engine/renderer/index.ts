@@ -91,7 +91,13 @@ export class CanvasRenderer {
     this.resizeObserver.observe(this.canvas);
 
     this.unsubscribers.push(
-      this.engine.events.on("scene:changed", () => this.scheduleRender()),
+      this.engine.events.on("scene:changed", ({ reason }) => {
+        if (reason === "replace-scene") {
+          this.render("full-redraw");
+          return;
+        }
+        this.scheduleRender();
+      }),
       this.engine.events.on("selection:changed", () => this.scheduleRender()),
       this.engine.events.on("tool:changed", () => this.scheduleRender()),
     );
@@ -308,6 +314,9 @@ export class CanvasRenderer {
     const cullBottom = (vh - cy) / zoom + 4;
 
     for (const node of nodes) {
+      if (node.data?.hidden) {
+        continue;
+      }
       // Viewport cull: skip nodes whose world AABB is entirely outside the screen.
       const wb = getCachedWorldBounds(node);
       if (

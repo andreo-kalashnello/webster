@@ -3,8 +3,13 @@ import { useMutation, useQuery } from "@apollo/client/react";
 
 import {
   CREATE_PROJECT_FROM_TEMPLATE_MUTATION,
+  DELETE_USER_TEMPLATE_MUTATION,
   USER_TEMPLATES_QUERY,
 } from "../graphql/templates.graphql";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { BlockingOverlay } from "@/components/ui/BlockingOverlay";
+import { useToastStore } from "@/shared/stores/toast.store";
+import { useState } from "react";
 
 function formatDate(value?: string) {
   if (!value) return "Unknown";
@@ -15,20 +20,89 @@ function formatDate(value?: string) {
 
 export function UserTemplatesPage() {
   const navigate = useNavigate();
+  const pushToast = useToastStore((state) => state.pushToast);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; title: string } | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const { data, loading, error } = useQuery(USER_TEMPLATES_QUERY);
   const [createFromTemplate, { loading: creating }] = useMutation(
     CREATE_PROJECT_FROM_TEMPLATE_MUTATION,
+    {
+      onError: (err) => {
+        pushToast({
+          title: "Template failed",
+          message: err.message,
+          tone: "error",
+        });
+      },
+    },
   );
+
+  const [deleteTemplate, { loading: deleting }] = useMutation(DELETE_USER_TEMPLATE_MUTATION, {
+    update: (cache, { data: result }, options) => {
+      if (!result?.deleteUserTemplate) {
+        return;
+      }
+
+      const deletedId = options.variables?.id as string | undefined;
+      if (!deletedId) {
+        return;
+      }
+
+      cache.updateQuery({ query: USER_TEMPLATES_QUERY }, (prev) => {
+        if (!prev?.userTemplates) {
+          return prev;
+        }
+
+        return {
+          ...prev,
+          userTemplates: prev.userTemplates.filter(
+            (template: { id: string }) => template.id !== deletedId,
+          ),
+        };
+      });
+    },
+    onError: (err) => {
+      pushToast({ title: "Delete failed", message: err.message, tone: "error" });
+    },
+  });
 
   const templates = data?.userTemplates ?? [];
 
   const handleUseTemplate = async (templateId: string, title?: string) => {
-    const result = await createFromTemplate({
-      variables: { templateId, title },
-    });
+    try {
+      const result = await createFromTemplate({
+        variables: { templateId, title },
+      });
 
-    const projectId = result.data?.createProjectFromTemplate?.id as string | undefined;
-    navigate(projectId ? `/editor?projectId=${projectId}` : "/editor");
+      const projectId = result.data?.createProjectFromTemplate?.id as string | undefined;
+      if (projectId) {
+        pushToast({ title: "Project created", tone: "success" });
+      }
+      navigate(projectId ? `/editor?projectId=${projectId}` : "/editor");
+    } catch {
+      // handled in onError
+    }
+  };
+
+  const handleDeleteTemplate = async () => {
+    if (!confirmDelete) {
+      return;
+    }
+
+    const { id, title } = confirmDelete;
+    setDeletingId(id);
+    try {
+      await deleteTemplate({
+        variables: { id },
+        optimisticResponse: { deleteUserTemplate: true },
+      });
+      pushToast({ title: "Template deleted", message: title, tone: "success" });
+    } catch {
+      // handled in onError
+    } finally {
+      setDeletingId(null);
+      setConfirmDelete(null);
+    }
   };
 
   return (
@@ -79,17 +153,34 @@ export function UserTemplatesPage() {
                 >
                   {creating ? "Preparing..." : "Use"}
                 </button>
-                <Link
-                  to="/editor"
-                  className="rounded-full border border-slate-700/60 px-4 py-2 text-sm text-slate-200"
+                <button
+                  type="button"
+                  className="rounded-full border border-rose-500/40 px-4 py-2 text-sm text-rose-200 transition hover:border-rose-400 disabled:opacity-60"
+                  onClick={() => setConfirmDelete({ id: template.id, title: template.title })}
+                  disabled={creating || deleting}
                 >
-                  Open in editor
-                </Link>
+                  Delete
+                </button>
               </div>
             </article>
           ))}
         </section>
       </div>
+
+      {(creating || deletingId) && (
+        <BlockingOverlay label={deletingId ? "Deleting template..." : "Preparing template..."} />
+      )}
+
+      <ConfirmDialog
+        open={Boolean(confirmDelete)}
+        title="Delete template?"
+        description="This will permanently remove the template."
+        confirmLabel="Delete"
+        confirmTone="danger"
+        busy={Boolean(deletingId)}
+        onCancel={() => setConfirmDelete(null)}
+        onConfirm={() => void handleDeleteTemplate()}
+      />
     </div>
   );
 }

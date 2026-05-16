@@ -70,6 +70,9 @@ function isPointInEllipseLocal(point: Point, rect: Rect): boolean {
 }
 
 export function hitTestNodeAtWorldPoint(node: SceneNode, worldPoint: Point): boolean {
+  if (node.data?.hidden || node.data?.locked) {
+    return false;
+  }
   // Fast reject via world AABB.
   const worldBounds = getNodeWorldBounds(node);
   if (
@@ -139,6 +142,7 @@ export function pickTopMostNodeAtWorldPoint(
     const nodeId = scene.nodeOrder[index];
     const node = scene.nodes[nodeId];
     if (!node) continue;
+    if (node.data?.hidden || node.data?.locked) continue;
     if (hitTestNodeAtWorldPoint(node, worldPoint)) {
       return nodeId;
     }

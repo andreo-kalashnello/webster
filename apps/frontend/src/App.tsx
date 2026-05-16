@@ -5,6 +5,8 @@ import { PrivateRoute } from "./components/PrivateRoute.tsx";
 import { CanvasEnginePage } from "./pages/CanvasEnginePage.tsx";
 import { EditorPage } from "./pages/EditorPage.tsx";
 import { LoginPage } from "./pages/LoginPage.tsx";
+import { MagicLinkPage } from "./pages/MagicLinkPage.tsx";
+import { OAuthCallbackPage } from "./pages/OAuthCallbackPage.tsx";
 import { ProfilePage } from "./pages/ProfilePage.tsx";
 import { ProjectsPage } from "./pages/ProjectsPage.tsx";
 import { RegisterPage } from "./pages/RegisterPage.tsx";
@@ -12,6 +14,7 @@ import { ResetPasswordPage } from "./pages/ResetPasswordPage.tsx";
 import { TemplatesPage } from "./pages/TemplatesPage.tsx";
 import { UserTemplatesPage } from "./pages/UserTemplatesPage.tsx";
 import { VerifyEmailPage } from "./pages/VerifyEmailPage.tsx";
+import { ToastViewport } from "./components/ui/ToastViewport";
 import { useAuthBootstrap } from "./shared/hooks";
 import { useAuthStore } from "./shared/stores/auth.store";
 
@@ -36,6 +39,8 @@ export default function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/magic-link" element={<MagicLinkPage />} />
+        <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
         <Route
           path="/profile"
           element={
@@ -84,7 +89,12 @@ export default function App() {
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   useAuthBootstrap();
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <ToastViewport />
+    </>
+  );
 }
 
 function HomePage() {

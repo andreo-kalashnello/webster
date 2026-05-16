@@ -4,6 +4,7 @@ import { EditorToolbar } from "./EditorToolbar";
 import { EditorToolsDock } from "./EditorToolsDock";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { EditorFooter } from "./EditorFooter";
+import { LayersPanel } from "./LayersPanel";
 
 type CanvasEditorLayoutProps = {
   /** Live canvas surface (engine renderer + interactions). */
@@ -16,6 +17,7 @@ export const CanvasEditorLayout: FC<CanvasEditorLayoutProps> = ({ canvas }) => {
       <EditorToolbar />
 
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
+        <LayersPanel />
         <div className="relative min-h-0 min-w-0 flex-1">
           {canvas}
           <EditorToolsDock />
